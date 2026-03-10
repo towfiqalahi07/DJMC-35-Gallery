@@ -1,19 +1,20 @@
-Developed by Alahi in co-operation with GEMINI
+<div align="center">
+<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+</div>
 
-Technologies used: 
-   * **Supabase** for database
-   * **Gemini** for snippets
-   * **Figma** for UI/UX
-   * **Vercel** for hosting
-   * **BulkSMS.net** API for authentication
-   * **ZED** & **VSCode** as IDE
+# Run and deploy your AI Studio app
 
--------
-<p>
-  <img src="https://img.shields.io/badge/Contains-AI-blue">
-</p>
+This contains everything you need to run your app locally.
+
+View your app in AI Studio: https://ai.studio/apps/df14ac81-1542-44a5-b0ef-4bb6c0ea8fbb
+
+## Run Locally
+
+**Prerequisites:**  Node.js
 
 
-Project Breakdown
-------------------
-[![](https://mermaid.ink/img/pako:eNpNULtuhDAQ_BVra4LABnO4y6O5ItIVqSI3Dt6Ac9hGxigPxL_HR3SnTLUzq5mRZoXOawQBk0ESTRyRnIL_wC6Sh4DqrP2nk44kSDi6u8EvM0ogglT1Vb4_7gK7CaflbTQdeUE7jSrivL9pARn0wWgQMSyYgcVg1YXCejFKiAPalC3SqVU4S5BuS55JuVfv7dUW_NIPIN7VOCe2TDo1PBnVB2VvakCnMTz6xUUQlNV7CIgVvhKlPGc1Zw0vWlrSoqwy-AbBqpw1VXuoOKUNb_mWwc_eWuSHpi7-ocwAtYk-PP8Nt--3_QK-yGGn?type=png)](https://mermaid.live/edit#pako:eNpNULtuhDAQ_BVra4LABnO4y6O5ItIVqSI3Dt6Ac9hGxigPxL_HR3SnTLUzq5mRZoXOawQBk0ESTRyRnIL_wC6Sh4DqrP2nk44kSDi6u8EvM0ogglT1Vb4_7gK7CaflbTQdeUE7jSrivL9pARn0wWgQMSyYgcVg1YXCejFKiAPalC3SqVU4S5BuS55JuVfv7dUW_NIPIN7VOCe2TDo1PBnVB2VvakCnMTz6xUUQlNV7CIgVvhKlPGc1Zw0vWlrSoqwy-AbBqpw1VXuoOKUNb_mWwc_eWuSHpi7-ocwAtYk-PP8Nt--3_QK-yGGn)
+1. Install dependencies:
+   `npm install`
+2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+3. Run the app:
+   `npm run dev`
