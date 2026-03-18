@@ -181,6 +181,24 @@ export default function AdminPage() {
             ))}
           </div>
         )}
+
+        <div className="mt-12 space-y-6">
+          <h2 className="text-2xl font-bold text-white">Manage Content</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <a href="https://supabase.com/dashboard" target="_blank" rel="noopener noreferrer" className="p-6 rounded-2xl bg-zinc-900/50 border border-white/5 hover:border-white/20 transition-colors group">
+              <h3 className="font-bold text-white group-hover:text-blue-400">Supabase Dashboard</h3>
+              <p className="text-sm text-zinc-400 mt-1">Manage all database tables, announcements, events, and resources directly from Supabase.</p>
+            </a>
+            <a href="/admin/polls" className="p-6 rounded-2xl bg-zinc-900/50 border border-white/5 hover:border-white/20 transition-colors group">
+              <h3 className="font-bold text-white group-hover:text-blue-400">Manage Polls</h3>
+              <p className="text-sm text-zinc-400 mt-1">Create, edit, publish, and close polls for the batch to vote on.</p>
+            </a>
+            <div className="p-6 rounded-2xl bg-zinc-900/50 border border-white/5">
+              <h3 className="font-bold text-white">Marquee Notice</h3>
+              <p className="text-sm text-zinc-400 mt-1 mb-4">To update the scrolling notice, go to Supabase `announcements` table and set `is_marquee` to true for the desired notice.</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

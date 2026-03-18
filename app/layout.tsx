@@ -1,5 +1,12 @@
 import type {Metadata} from 'next';
+import { Hind_Siliguri } from 'next/font/google';
 import './globals.css'; // Global styles
+
+const hindSiliguri = Hind_Siliguri({
+  weight: ['400', '500', '600', '700'],
+  subsets: ['bengali'],
+  variable: '--font-bengali',
+});
 
 export const metadata: Metadata = {
   title: "DJMC '35 Batch Directory",
@@ -9,7 +16,7 @@ export const metadata: Metadata = {
 export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
     <html lang="en">
-      <body suppressHydrationWarning>{children}</body>
+      <body className={`${hindSiliguri.variable} font-sans`} suppressHydrationWarning>{children}</body>
     </html>
   );
 }

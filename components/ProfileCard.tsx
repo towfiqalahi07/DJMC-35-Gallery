@@ -82,11 +82,18 @@ export function ProfileCard({ profile }: { profile: ProfileProps }) {
           <div className="mt-6 flex items-center gap-2 pt-4 border-t border-white/5">
             {profile.whatsapp && (
               <a
-                href={`https://api.whatsapp.com/send/?phone=${
-                  profile.whatsapp.replace(/[^0-9]/g, '').startsWith('01') && profile.whatsapp.replace(/[^0-9]/g, '').length === 11 
-                    ? '88' + profile.whatsapp.replace(/[^0-9]/g, '') 
-                    : profile.whatsapp.replace(/[^0-9]/g, '')
-                }`}
+                href={`https://api.whatsapp.com/send/?phone=${(() => {
+                  let cleanPhone = profile.whatsapp.replace(/[^0-9]/g, '');
+                  if (cleanPhone.startsWith('01') && cleanPhone.length === 11) {
+                    return '88' + cleanPhone;
+                  } else if (cleanPhone.startsWith('1') && cleanPhone.length === 10) {
+                    return '880' + cleanPhone;
+                  } else if (!cleanPhone.startsWith('88')) {
+                    // Fallback if it's some other format but doesn't have country code
+                    return '88' + cleanPhone;
+                  }
+                  return cleanPhone;
+                })()}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#25D366]/10 px-3 py-2.5 text-sm font-semibold text-[#25D366] transition-all duration-300 hover:bg-[#25D366]/20 hover:scale-[1.02] active:scale-[0.98]"
