@@ -207,81 +207,70 @@ export default function ProfilePage() {
         <form onSubmit={handleSubmit} className="space-y-6 bg-zinc-900/50 p-6 sm:p-8 rounded-3xl border border-white/5">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-zinc-400 mb-2">Full Name</label>
+              <label className="block text-sm font-medium text-zinc-400 mb-2">Full Name <span className="text-xs text-zinc-500">(Admin only)</span></label>
               <input
                 type="text"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full rounded-xl border border-white/10 bg-zinc-900 py-3 px-4 text-white focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/20"
-                required
+                readOnly
+                className="w-full rounded-xl border border-white/5 bg-zinc-900/50 py-3 px-4 text-zinc-500 cursor-not-allowed focus:outline-none"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-zinc-400 mb-2">Phone Number</label>
-              <div className="flex gap-2">
-                <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="01XXXXXXXXX"
-                  className="w-full rounded-xl border border-white/10 bg-zinc-900 py-3 px-4 text-white focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/20"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={handlePhoneCheck}
-                  className="px-4 py-2 rounded-xl bg-zinc-800 text-white font-medium hover:bg-zinc-700 transition-colors whitespace-nowrap"
-                >
-                  Check
-                </button>
-              </div>
+              <label className="block text-sm font-medium text-zinc-400 mb-2">Phone Number <span className="text-xs text-zinc-500">(Admin only)</span></label>
+              <input
+                type="tel"
+                value={formData.phone}
+                readOnly
+                placeholder="Admin will set this"
+                className="w-full rounded-xl border border-white/5 bg-zinc-900/50 py-3 px-4 text-zinc-500 cursor-not-allowed focus:outline-none"
+              />
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-zinc-400 mb-2">HSC Batch</label>
+              <label className="block text-sm font-medium text-zinc-400 mb-2">HSC Batch <span className="text-xs text-zinc-500">(Admin only)</span></label>
               <input
                 type="text"
                 value={formData.hscBatch}
-                onChange={(e) => setFormData({ ...formData, hscBatch: e.target.value })}
-                className="w-full rounded-xl border border-white/10 bg-zinc-900 py-3 px-4 text-white focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/20"
+                readOnly
+                className="w-full rounded-xl border border-white/5 bg-zinc-900/50 py-3 px-4 text-zinc-500 cursor-not-allowed focus:outline-none"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-zinc-400 mb-2">Previous College</label>
+              <label className="block text-sm font-medium text-zinc-400 mb-2">Previous College <span className="text-xs text-zinc-500">(Admin only)</span></label>
               <input
                 type="text"
                 value={formData.college}
-                onChange={(e) => setFormData({ ...formData, college: e.target.value })}
-                className="w-full rounded-xl border border-white/10 bg-zinc-900 py-3 px-4 text-white focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/20"
+                readOnly
+                className="w-full rounded-xl border border-white/5 bg-zinc-900/50 py-3 px-4 text-zinc-500 cursor-not-allowed focus:outline-none"
               />
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-zinc-400 mb-2">Blood Group</label>
+              <label className="block text-sm font-medium text-zinc-400 mb-2">Blood Group <span className="text-xs text-zinc-500">(Admin only)</span></label>
               <input
                 type="text"
                 value={formData.bloodGroup}
-                onChange={(e) => setFormData({ ...formData, bloodGroup: e.target.value })}
-                className="w-full rounded-xl border border-white/10 bg-zinc-900 py-3 px-4 text-white focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/20"
+                readOnly
+                className="w-full rounded-xl border border-white/5 bg-zinc-900/50 py-3 px-4 text-zinc-500 cursor-not-allowed focus:outline-none"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-zinc-400 mb-2">MAT Roll</label>
+              <label className="block text-sm font-medium text-zinc-400 mb-2">MAT Roll <span className="text-xs text-zinc-500">(Admin only)</span></label>
               <input
                 type="text"
                 value={formData.admissionRoll}
-                onChange={(e) => setFormData({ ...formData, admissionRoll: e.target.value })}
-                className="w-full rounded-xl border border-white/10 bg-zinc-900 py-3 px-4 text-white focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/20"
+                readOnly
+                className="w-full rounded-xl border border-white/5 bg-zinc-900/50 py-3 px-4 text-zinc-500 cursor-not-allowed focus:outline-none"
               />
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-zinc-400 mb-2">Home District</label>
+              <label className="block text-sm font-medium text-zinc-400 mb-2">Home District <span className="text-xs text-zinc-500">(Admin only)</span></label>
               <input
                 type="text"
                 value={formData.district}
-                onChange={(e) => setFormData({ ...formData, district: e.target.value })}
-                className="w-full rounded-xl border border-white/10 bg-zinc-900 py-3 px-4 text-white focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/20"
+                readOnly
+                className="w-full rounded-xl border border-white/5 bg-zinc-900/50 py-3 px-4 text-zinc-500 cursor-not-allowed focus:outline-none"
               />
             </div>
             <div>
