@@ -1,20 +1,37 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Header from '@/components/Header';
-import { MapPin, Users, Calendar, GraduationCap, ChevronLeft, ChevronRight } from 'lucide-react';
+import { MapPin, Users, Calendar, GraduationCap, ChevronLeft, ChevronRight, Globe } from 'lucide-react';
 import Image from 'next/image';
 
 export default function AboutPage() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  
-  const galleryImages = [
-    "https://picsum.photos/seed/djmc1/1200/600",
-    "https://picsum.photos/seed/djmc2/1200/600",
-    "https://picsum.photos/seed/djmc3/1200/600",
-    "https://picsum.photos/seed/djmc4/1200/600",
-    "https://picsum.photos/seed/djmc5/1200/600",
-  ];
+  const [galleryImages, setGalleryImages] = useState<{id: string, url: string}[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchGallery = async () => {
+      try {
+        const response = await fetch('/api/gallery');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.images && data.images.length > 0) {
+            setGalleryImages(data.images);
+          } else {
+            // Fallback if empty
+            setGalleryImages([{ id: 'fallback', url: 'https://picsum.photos/seed/djmc1/1200/600' }]);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch gallery:', error);
+        setGalleryImages([{ id: 'fallback', url: 'https://picsum.photos/seed/djmc1/1200/600' }]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchGallery();
+  }, []);
 
   const nextImage = () => setCurrentImageIndex((prev) => (prev + 1) % galleryImages.length);
   const prevImage = () => setCurrentImageIndex((prev) => (prev - 1 + galleryImages.length) % galleryImages.length);
@@ -34,6 +51,17 @@ export default function AboutPage() {
           <p className="max-w-2xl mx-auto text-zinc-400 text-lg">
             We are the 35th batch of Dinajpur Medical College. A family of future doctors, united by our passion for medicine and our bond as batchmates.
           </p>
+          <div className="mt-8 flex justify-center">
+            <a 
+              href="https://djmc.edu.bd/" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-bold text-black transition-transform hover:scale-105 active:scale-95"
+            >
+              <Globe className="h-4 w-4" />
+              Visit Official Website
+            </a>
+          </div>
         </section>
 
         {/* Info Grid */}
@@ -80,43 +108,49 @@ export default function AboutPage() {
         <section className="pb-20 max-w-5xl mx-auto px-4">
           <h2 className="text-3xl font-bold text-white text-center mb-10">Memories</h2>
           <div className="relative rounded-3xl overflow-hidden bg-zinc-900 border border-white/10 aspect-[16/9] md:aspect-[21/9] group">
-            <Image 
-              src={galleryImages[currentImageIndex]} 
-              alt={`Gallery image ${currentImageIndex + 1}`}
-              fill
-              className="object-cover transition-opacity duration-500"
-              referrerPolicy="no-referrer"
-            />
+            {!isLoading && galleryImages.length > 0 && (
+              <Image 
+                src={galleryImages[currentImageIndex].url} 
+                alt={`Gallery image ${currentImageIndex + 1}`}
+                fill
+                className="object-cover transition-opacity duration-500"
+                referrerPolicy="no-referrer"
+              />
+            )}
             
             {/* Slider Controls */}
-            <div className="absolute inset-0 flex items-center justify-between p-4 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button 
-                onClick={prevImage}
-                className="h-12 w-12 rounded-full bg-black/50 text-white flex items-center justify-center backdrop-blur-sm border border-white/10 hover:bg-black/70 transition-colors"
-                aria-label="Previous image"
-              >
-                <ChevronLeft className="h-6 w-6" />
-              </button>
-              <button 
-                onClick={nextImage}
-                className="h-12 w-12 rounded-full bg-black/50 text-white flex items-center justify-center backdrop-blur-sm border border-white/10 hover:bg-black/70 transition-colors"
-                aria-label="Next image"
-              >
-                <ChevronRight className="h-6 w-6" />
-              </button>
-            </div>
+            {galleryImages.length > 1 && (
+              <div className="absolute inset-0 flex items-center justify-between p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button 
+                  onClick={prevImage}
+                  className="h-12 w-12 rounded-full bg-black/50 text-white flex items-center justify-center backdrop-blur-sm border border-white/10 hover:bg-black/70 transition-colors"
+                  aria-label="Previous image"
+                >
+                  <ChevronLeft className="h-6 w-6" />
+                </button>
+                <button 
+                  onClick={nextImage}
+                  className="h-12 w-12 rounded-full bg-black/50 text-white flex items-center justify-center backdrop-blur-sm border border-white/10 hover:bg-black/70 transition-colors"
+                  aria-label="Next image"
+                >
+                  <ChevronRight className="h-6 w-6" />
+                </button>
+              </div>
+            )}
 
             {/* Indicators */}
-            <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
-              {galleryImages.map((_, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setCurrentImageIndex(idx)}
-                  className={`h-2 rounded-full transition-all ${idx === currentImageIndex ? 'w-8 bg-white' : 'w-2 bg-white/50'}`}
-                  aria-label={`Go to image ${idx + 1}`}
-                />
-              ))}
-            </div>
+            {galleryImages.length > 1 && (
+              <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
+                {galleryImages.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setCurrentImageIndex(idx)}
+                    className={`h-2 rounded-full transition-all ${idx === currentImageIndex ? 'w-8 bg-white' : 'w-2 bg-white/50'}`}
+                    aria-label={`Go to image ${idx + 1}`}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </section>
 
@@ -178,7 +212,7 @@ export default function AboutPage() {
               <h2 className="text-3xl font-bold text-white mb-6">Location</h2>
               <div className="aspect-video w-full rounded-2xl overflow-hidden border border-white/10 bg-zinc-800">
                 <iframe 
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3593.636750058887!2d88.6300441150207!3d25.64964198368564!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39fb529e84e5b667%3A0x6d9f0f9549302638!2sDinajpur%20Medical%20College!5e0!3m2!1sen!2sbd!4v1625580000000!5m2!1sen!2sbd" 
+                  src="https://maps.google.com/maps?q=M.%20Abdur%20Rahim%20Medical%20College,%20Dinajpur&t=&z=15&ie=UTF8&iwloc=&output=embed" 
                   width="100%" 
                   height="100%" 
                   style={{ border: 0 }} 

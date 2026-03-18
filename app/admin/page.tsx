@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Loader2, CheckCircle, XCircle, ShieldAlert } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, ShieldAlert, Trash2, Plus, Image as ImageIcon } from 'lucide-react';
 import Image from 'next/image';
 
 interface ProfileProps {
@@ -18,12 +18,32 @@ interface ProfileProps {
   is_approved: boolean;
 }
 
+interface GalleryImage {
+  id: string;
+  url: string;
+}
+
 export default function AdminPage() {
   const [password, setPassword] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [profiles, setProfiles] = useState<ProfileProps[]>([]);
+  const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
+  const [newImageUrl, setNewImageUrl] = useState('');
+  const [isGalleryLoading, setIsGalleryLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const fetchGallery = async () => {
+    try {
+      const res = await fetch('/api/gallery');
+      if (res.ok) {
+        const data = await res.json();
+        setGalleryImages(data.images || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch gallery:', err);
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,6 +64,7 @@ export default function AdminPage() {
       const data = await res.json();
       setProfiles(data.profiles);
       setIsAuthenticated(true);
+      fetchGallery();
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -86,6 +107,54 @@ export default function AdminPage() {
       if (!res.ok) throw new Error('Failed to reject');
 
       setProfiles(profiles.filter(p => p.id !== id));
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  const handleAddGalleryImage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newImageUrl) return;
+    
+    setIsGalleryLoading(true);
+    try {
+      const res = await fetch('/api/admin/gallery', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-password': password,
+        },
+        body: JSON.stringify({ url: newImageUrl }),
+      });
+
+      if (!res.ok) throw new Error('Failed to add image');
+
+      const data = await res.json();
+      setGalleryImages([...galleryImages, data.image]);
+      setNewImageUrl('');
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setIsGalleryLoading(false);
+    }
+  };
+
+  const handleDeleteGalleryImage = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this image?')) return;
+    
+    try {
+      const res = await fetch('/api/admin/gallery', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-password': password,
+        },
+        body: JSON.stringify({ id }),
+      });
+
+      if (!res.ok) throw new Error('Failed to delete image');
+
+      setGalleryImages(galleryImages.filter(img => img.id !== id));
     } catch (err: any) {
       alert(err.message);
     }
@@ -181,6 +250,54 @@ export default function AdminPage() {
             ))}
           </div>
         )}
+
+        <div className="mt-12 space-y-6">
+          <h2 className="text-2xl font-bold text-white">Manage Gallery</h2>
+          <div className="bg-zinc-900/50 border border-white/10 rounded-2xl p-6">
+            <form onSubmit={handleAddGalleryImage} className="flex gap-4 mb-8">
+              <input
+                type="url"
+                value={newImageUrl}
+                onChange={(e) => setNewImageUrl(e.target.value)}
+                placeholder="Enter image URL (e.g., https://example.com/image.jpg)"
+                className="flex-1 rounded-xl border border-white/10 bg-black/50 px-4 py-3 text-white placeholder-zinc-600 focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/20"
+                required
+              />
+              <button
+                type="submit"
+                disabled={isGalleryLoading}
+                className="rounded-xl bg-white px-6 py-3 font-semibold text-black transition-all hover:bg-zinc-200 active:scale-[0.98] disabled:opacity-50 flex items-center gap-2 whitespace-nowrap"
+              >
+                {isGalleryLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Plus className="h-5 w-5" />}
+                Add Image
+              </button>
+            </form>
+
+            {galleryImages.length === 0 ? (
+              <div className="text-center py-12 border border-dashed border-white/10 rounded-xl">
+                <ImageIcon className="h-8 w-8 text-zinc-600 mx-auto mb-2" />
+                <p className="text-zinc-500">No images in the gallery yet.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                {galleryImages.map((img) => (
+                  <div key={img.id} className="group relative aspect-video rounded-xl overflow-hidden border border-white/10 bg-zinc-800">
+                    <Image src={img.url} alt="Gallery image" fill className="object-cover" />
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <button
+                        onClick={() => handleDeleteGalleryImage(img.id)}
+                        className="h-10 w-10 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors"
+                        title="Delete image"
+                      >
+                        <Trash2 className="h-5 w-5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
 
         <div className="mt-12 space-y-6">
           <h2 className="text-2xl font-bold text-white">Manage Content</h2>
