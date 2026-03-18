@@ -2,12 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import Header from '@/components/Header';
-import { MapPin, Users, Calendar, GraduationCap, ChevronLeft, ChevronRight, Globe } from 'lucide-react';
-import Image from 'next/image';
+import { MapPin, Users, Calendar, GraduationCap, Globe } from 'lucide-react';
 
 export default function AboutPage() {
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [galleryImages, setGalleryImages] = useState<{id: string, url: string}[]>([]);
+  const [galleryEmbeds, setGalleryEmbeds] = useState<{id: string, url: string}[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -17,24 +15,17 @@ export default function AboutPage() {
         if (response.ok) {
           const data = await response.json();
           if (data.images && data.images.length > 0) {
-            setGalleryImages(data.images);
-          } else {
-            // Fallback if empty
-            setGalleryImages([{ id: 'fallback', url: 'https://picsum.photos/seed/djmc1/1200/600' }]);
+            setGalleryEmbeds(data.images);
           }
         }
       } catch (error) {
         console.error('Failed to fetch gallery:', error);
-        setGalleryImages([{ id: 'fallback', url: 'https://picsum.photos/seed/djmc1/1200/600' }]);
       } finally {
         setIsLoading(false);
       }
     };
     fetchGallery();
   }, []);
-
-  const nextImage = () => setCurrentImageIndex((prev) => (prev + 1) % galleryImages.length);
-  const prevImage = () => setCurrentImageIndex((prev) => (prev - 1 + galleryImages.length) % galleryImages.length);
 
   return (
     <div className="min-h-screen bg-black text-zinc-300 selection:bg-zinc-800 selection:text-white flex flex-col">
@@ -104,51 +95,27 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* Gallery Slider */}
+        {/* Gallery Embeds */}
         <section className="pb-20 max-w-5xl mx-auto px-4">
           <h2 className="text-3xl font-bold text-white text-center mb-10">Memories</h2>
-          <div className="relative rounded-3xl overflow-hidden bg-zinc-900 border border-white/10 aspect-[16/9] md:aspect-[21/9] group">
-            {!isLoading && galleryImages.length > 0 && (
-              <Image 
-                src={galleryImages[currentImageIndex].url} 
-                alt={`Gallery image ${currentImageIndex + 1}`}
-                fill
-                className="object-cover transition-opacity duration-500"
-                referrerPolicy="no-referrer"
-              />
-            )}
-            
-            {/* Slider Controls */}
-            {galleryImages.length > 1 && (
-              <div className="absolute inset-0 flex items-center justify-between p-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button 
-                  onClick={prevImage}
-                  className="h-12 w-12 rounded-full bg-black/50 text-white flex items-center justify-center backdrop-blur-sm border border-white/10 hover:bg-black/70 transition-colors"
-                  aria-label="Previous image"
-                >
-                  <ChevronLeft className="h-6 w-6" />
-                </button>
-                <button 
-                  onClick={nextImage}
-                  className="h-12 w-12 rounded-full bg-black/50 text-white flex items-center justify-center backdrop-blur-sm border border-white/10 hover:bg-black/70 transition-colors"
-                  aria-label="Next image"
-                >
-                  <ChevronRight className="h-6 w-6" />
-                </button>
+          <div className="space-y-8">
+            {isLoading ? (
+              <div className="text-center text-zinc-500 py-12 border border-white/5 rounded-3xl bg-zinc-900/30">
+                Loading gallery...
               </div>
-            )}
-
-            {/* Indicators */}
-            {galleryImages.length > 1 && (
-              <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
-                {galleryImages.map((_, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setCurrentImageIndex(idx)}
-                    className={`h-2 rounded-full transition-all ${idx === currentImageIndex ? 'w-8 bg-white' : 'w-2 bg-white/50'}`}
-                    aria-label={`Go to image ${idx + 1}`}
-                  />
-                ))}
+            ) : galleryEmbeds.length > 0 ? (
+              galleryEmbeds.map((embed) => (
+                <div key={embed.id} className="w-full overflow-hidden rounded-3xl bg-zinc-900/50 border border-white/10 p-2 sm:p-4">
+                  {embed.url.trim().startsWith('<') ? (
+                    <div dangerouslySetInnerHTML={{ __html: embed.url }} className="w-full flex justify-center overflow-x-auto" />
+                  ) : (
+                    <iframe src={embed.url} className="w-full aspect-video border-0 rounded-2xl" allowFullScreen loading="lazy"></iframe>
+                  )}
+                </div>
+              ))
+            ) : (
+              <div className="text-center text-zinc-500 py-12 border border-dashed border-white/10 rounded-3xl bg-zinc-900/30">
+                No gallery album embedded yet.
               </div>
             )}
           </div>
