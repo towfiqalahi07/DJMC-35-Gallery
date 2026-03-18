@@ -36,33 +36,38 @@ export default function ProfilePage() {
       }
       setUser(session.user);
       
-      // Fetch profile from students table
-      const { data: studentData } = await supabase
-        .from('students')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .maybeSingle();
-
-      if (studentData) {
-        setProfile(studentData);
-        setFormData({
-          name: studentData.name || session.user.user_metadata.full_name,
-          email: studentData.email || session.user.email,
-          phone: studentData.phone || '',
-          hscBatch: studentData.hsc_batch || '',
-          college: studentData.college || '',
-          bloodGroup: studentData.blood_group || '',
-          admissionRoll: studentData.admission_roll || '',
-          district: studentData.district || '',
-          whatsapp: studentData.whatsapp || '',
-          facebook: studentData.facebook || '',
-        });
-      } else {
-        setFormData(prev => ({
-          ...prev,
-          name: session.user.user_metadata.full_name || '',
-          email: session.user.email || '',
-        }));
+      // Fetch profile from API route
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      
+      const res = await fetch('/api/profile', {
+        headers: {
+          'Authorization': `Bearer ${currentSession?.access_token}`
+        }
+      });
+      
+      if (res.ok) {
+        const { profile: studentData } = await res.json();
+        if (studentData) {
+          setProfile(studentData);
+          setFormData({
+            name: studentData.name || session.user.user_metadata.full_name,
+            email: studentData.email || session.user.email,
+            phone: studentData.phone || '',
+            hscBatch: studentData.hsc_batch || '',
+            college: studentData.college || '',
+            bloodGroup: studentData.blood_group || '',
+            admissionRoll: studentData.admission_roll || '',
+            district: studentData.district || '',
+            whatsapp: studentData.whatsapp || '',
+            facebook: studentData.facebook || '',
+          });
+        } else {
+          setFormData(prev => ({
+            ...prev,
+            name: session.user.user_metadata.full_name || '',
+            email: session.user.email || '',
+          }));
+        }
       }
       setIsLoading(false);
     }
@@ -73,12 +78,18 @@ export default function ProfilePage() {
     if (!formData.phone) return;
     setIsLoading(true);
     
-    // Check if phone exists in students table
-    const { data } = await supabase
-      .from('students')
-      .select('*')
-      .eq('phone', formData.phone)
-      .maybeSingle();
+    // Check if phone exists via API
+    const { data: { session } } = await supabase.auth.getSession();
+    const res = await fetch('/api/profile/check-phone', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session?.access_token}`
+      },
+      body: JSON.stringify({ phone: formData.phone })
+    });
+
+    const { data } = await res.json();
 
     if (data && !data.user_id) {
       // Autofill data
@@ -107,46 +118,46 @@ export default function ProfilePage() {
     setMessage(null);
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
       const payload = {
-        user_id: user.id,
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
-        hsc_batch: formData.hscBatch,
+        hscBatch: formData.hscBatch,
         college: formData.college,
-        blood_group: formData.bloodGroup,
-        admission_roll: formData.admissionRoll,
+        bloodGroup: formData.bloodGroup,
+        admissionRoll: formData.admissionRoll,
         district: formData.district,
         whatsapp: formData.whatsapp,
         facebook: formData.facebook,
-        // If profile exists, keep approval status, else set to false
-        is_approved: profile ? profile.is_approved : false,
         photo_url: profile ? profile.photo_url : user.user_metadata.avatar_url,
       };
 
-      if (profile) {
-        const { error } = await supabase.from('students').update(payload).eq('id', profile.id);
-        if (error) throw error;
-      } else {
-        // Check if the phone number already exists in the database (e.g., pre-populated by admins)
-        const { data: existingPhoneData } = await supabase
-          .from('students')
-          .select('id, user_id')
-          .eq('phone', formData.phone)
-          .maybeSingle();
+      const res = await fetch('/api/profile', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`
+        },
+        body: JSON.stringify(payload)
+      });
 
-        if (existingPhoneData) {
-          if (existingPhoneData.user_id && existingPhoneData.user_id !== user.id) {
-            throw new Error('This phone number is already linked to another account.');
-          }
-          // Update the existing record
-          const { error } = await supabase.from('students').update(payload).eq('id', existingPhoneData.id);
-          if (error) throw error;
-        } else {
-          // Insert new record
-          const { error } = await supabase.from('students').insert([payload]);
-          if (error) throw error;
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to save profile');
+      }
+
+      // Refresh profile state
+      const profileRes = await fetch('/api/profile', {
+        headers: {
+          'Authorization': `Bearer ${session?.access_token}`
         }
+      });
+      if (profileRes.ok) {
+        const { profile: updatedProfile } = await profileRes.json();
+        setProfile(updatedProfile);
       }
 
       setMessage({ type: 'success', text: 'Profile saved successfully!' });

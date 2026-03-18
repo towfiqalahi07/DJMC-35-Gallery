@@ -14,8 +14,14 @@ export default function Header() {
       setUser(session?.user ?? null);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
+      if (event === 'SIGNED_IN') {
+        // If we just signed in and we are on the home page, redirect to profile
+        if (window.location.pathname === '/') {
+          window.location.href = '/profile';
+        }
+      }
     });
 
     return () => subscription.unsubscribe();
