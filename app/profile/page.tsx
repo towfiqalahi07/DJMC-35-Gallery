@@ -331,10 +331,11 @@ export default function ProfilePage() {
                           setFormData({...formData, whatsapp: profile.whatsapp || ''});
                           setEditingField('whatsapp');
                         }}
-                        className="text-zinc-500 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity p-1"
-                        title="Edit"
+                        className="flex items-center gap-1.5 text-xs font-medium text-zinc-400 hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-2.5 py-1.5 rounded-lg"
+                        title="Edit WhatsApp"
                       >
-                        <Edit2 className="w-4 h-4" />
+                        <Edit2 className="w-3.5 h-3.5" />
+                        Edit
                       </button>
                     </div>
                   )}
@@ -371,10 +372,11 @@ export default function ProfilePage() {
                           setFormData({...formData, facebook: profile.facebook || ''});
                           setEditingField('facebook');
                         }}
-                        className="text-zinc-500 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity p-1"
-                        title="Edit"
+                        className="flex items-center gap-1.5 text-xs font-medium text-zinc-400 hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-2.5 py-1.5 rounded-lg"
+                        title="Edit Facebook"
                       >
-                        <Edit2 className="w-4 h-4" />
+                        <Edit2 className="w-3.5 h-3.5" />
+                        Edit
                       </button>
                     </div>
                   )}
