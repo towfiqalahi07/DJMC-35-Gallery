@@ -71,6 +71,7 @@ export default function Header() {
               href="/profile"
               className="inline-flex items-center justify-center gap-2 rounded-full bg-zinc-800 px-4 py-2 text-sm font-medium text-white transition-transform hover:scale-105 active:scale-95"
             >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={user.user_metadata.avatar_url} alt="Avatar" className="w-5 h-5 rounded-full" />
               <span>Profile</span>
             </Link>
@@ -114,6 +115,7 @@ export default function Header() {
                   className="flex items-center gap-2 rounded-md px-3 py-2 text-base font-medium text-white bg-zinc-800"
                   onClick={() => setIsMenuOpen(false)}
                 >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={user.user_metadata.avatar_url} alt="Avatar" className="w-5 h-5 rounded-full" />
                   <span>Profile</span>
                 </Link>

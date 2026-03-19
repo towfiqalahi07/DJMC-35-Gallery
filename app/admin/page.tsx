@@ -28,7 +28,7 @@ export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [profiles, setProfiles] = useState<ProfileProps[]>([]);
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
-  const [newEmbedCode, setNewEmbedCode] = useState('');
+  const [newImageUrl, setNewImageUrl] = useState('');
   const [isGalleryLoading, setIsGalleryLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -114,7 +114,7 @@ export default function AdminPage() {
 
   const handleAddGalleryImage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newEmbedCode) return;
+    if (!newImageUrl) return;
     
     setIsGalleryLoading(true);
     try {
@@ -124,14 +124,14 @@ export default function AdminPage() {
           'Content-Type': 'application/json',
           'x-admin-password': password,
         },
-        body: JSON.stringify({ url: newEmbedCode }),
+        body: JSON.stringify({ url: newImageUrl }),
       });
 
-      if (!res.ok) throw new Error('Failed to add embed');
+      if (!res.ok) throw new Error('Failed to add image');
 
       const data = await res.json();
       setGalleryImages([...galleryImages, data.image]);
-      setNewEmbedCode('');
+      setNewImageUrl('');
     } catch (err: any) {
       alert(err.message);
     } finally {
@@ -255,11 +255,12 @@ export default function AdminPage() {
           <h2 className="text-2xl font-bold text-white">Manage Gallery</h2>
           <div className="bg-zinc-900/50 border border-white/10 rounded-2xl p-6">
             <form onSubmit={handleAddGalleryImage} className="flex flex-col sm:flex-row gap-4 mb-8">
-              <textarea
-                value={newEmbedCode}
-                onChange={(e) => setNewEmbedCode(e.target.value)}
-                placeholder="Paste Embed HTML code (iframe/script) OR a direct embed URL here..."
-                className="flex-1 rounded-xl border border-white/10 bg-black/50 px-4 py-3 text-white placeholder-zinc-600 focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/20 min-h-[100px] sm:min-h-[50px]"
+              <input
+                type="url"
+                value={newImageUrl}
+                onChange={(e) => setNewImageUrl(e.target.value)}
+                placeholder="Direct Image URL (e.g., from postimages.org or imgur.com)"
+                className="flex-1 rounded-xl border border-white/10 bg-black/50 px-4 py-3 text-white placeholder-zinc-600 focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/20"
                 required
               />
               <button
@@ -268,28 +269,30 @@ export default function AdminPage() {
                 className="rounded-xl bg-white px-6 py-3 font-semibold text-black transition-all hover:bg-zinc-200 active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 whitespace-nowrap h-fit"
               >
                 {isGalleryLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Plus className="h-5 w-5" />}
-                Add Embed
+                Add Image
               </button>
             </form>
 
             {galleryImages.length === 0 ? (
               <div className="text-center py-12 border border-dashed border-white/10 rounded-xl">
                 <ImageIcon className="h-8 w-8 text-zinc-600 mx-auto mb-2" />
-                <p className="text-zinc-500">No albums embedded yet.</p>
+                <p className="text-zinc-500">No images in the gallery yet.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                 {galleryImages.map((img) => (
-                  <div key={img.id} className="relative rounded-xl overflow-hidden border border-white/10 bg-zinc-800 p-4 flex flex-col gap-4">
-                    <div className="text-xs text-zinc-400 font-mono break-all bg-black/50 p-3 rounded-lg max-h-32 overflow-y-auto">
-                      {img.url}
+                  <div key={img.id} className="group relative aspect-video rounded-xl overflow-hidden border border-white/10 bg-zinc-800">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={img.url} alt="Gallery image" className="object-cover w-full h-full" />
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <button
+                        onClick={() => handleDeleteGalleryImage(img.id)}
+                        className="h-10 w-10 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors"
+                        title="Delete image"
+                      >
+                        <Trash2 className="h-5 w-5" />
+                      </button>
                     </div>
-                    <button
-                      onClick={() => handleDeleteGalleryImage(img.id)}
-                      className="self-end flex items-center gap-2 px-3 py-1.5 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors text-sm font-medium"
-                    >
-                      <Trash2 className="h-4 w-4" /> Remove Embed
-                    </button>
                   </div>
                 ))}
               </div>

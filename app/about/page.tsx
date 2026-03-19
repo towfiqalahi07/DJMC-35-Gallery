@@ -1,12 +1,23 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Header from '@/components/Header';
-import { MapPin, Users, Calendar, GraduationCap, Globe } from 'lucide-react';
+import { MapPin, Users, Calendar, GraduationCap, Globe, ChevronLeft, ChevronRight } from 'lucide-react';
+import useEmblaCarousel from 'embla-carousel-react';
+import Autoplay from 'embla-carousel-autoplay';
 
 export default function AboutPage() {
-  const [galleryEmbeds, setGalleryEmbeds] = useState<{id: string, url: string}[]>([]);
+  const [galleryImages, setGalleryImages] = useState<{id: string, url: string}[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true }, [Autoplay({ delay: 4000, stopOnInteraction: false })]);
+
+  const scrollPrev = useCallback(() => {
+    if (emblaApi) emblaApi.scrollPrev();
+  }, [emblaApi]);
+
+  const scrollNext = useCallback(() => {
+    if (emblaApi) emblaApi.scrollNext();
+  }, [emblaApi]);
 
   useEffect(() => {
     const fetchGallery = async () => {
@@ -15,7 +26,7 @@ export default function AboutPage() {
         if (response.ok) {
           const data = await response.json();
           if (data.images && data.images.length > 0) {
-            setGalleryEmbeds(data.images);
+            setGalleryImages(data.images);
           }
         }
       } catch (error) {
@@ -37,8 +48,8 @@ export default function AboutPage() {
           <div className="h-24 w-24 bg-white rounded-full mx-auto mb-6 flex items-center justify-center shadow-[0_0_30px_rgba(255,255,255,0.1)]">
             <span className="text-black font-bold text-2xl">DjMC</span>
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">About DjMC 35</h1>
-          <p className="text-xl text-blue-400 font-bengali italic mb-8">"প্রত্যুষ্মান ৩৫"</p>
+          <h2 className="text-4xl md:text-6xl font-bold text-blue-400 font-bengali mt-2">প্রত্যুষ্মান ৩৫</h2>
+          <p className="text-xl text-blue-400 font-bengali italic mb-8">&quot;জ্ঞানে দীপ্ত, সেবায় মহান— মোরা পঁয়ত্রিশ, মোরাই প্রত্যুষ্মান&quot;</p>
           <p className="max-w-2xl mx-auto text-zinc-400 text-lg">
             We are the 35th batch of Dinajpur Medical College. A family of future doctors, united by our passion for medicine and our bond as batchmates.
           </p>
@@ -95,7 +106,7 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* Gallery Embeds */}
+        {/* Gallery Slider */}
         <section className="pb-20 max-w-5xl mx-auto px-4">
           <h2 className="text-3xl font-bold text-white text-center mb-10">Memories</h2>
           <div className="space-y-8">
@@ -103,19 +114,40 @@ export default function AboutPage() {
               <div className="text-center text-zinc-500 py-12 border border-white/5 rounded-3xl bg-zinc-900/30">
                 Loading gallery...
               </div>
-            ) : galleryEmbeds.length > 0 ? (
-              galleryEmbeds.map((embed) => (
-                <div key={embed.id} className="w-full overflow-hidden rounded-3xl bg-zinc-900/50 border border-white/10 p-2 sm:p-4">
-                  {embed.url.trim().startsWith('<') ? (
-                    <div dangerouslySetInnerHTML={{ __html: embed.url }} className="w-full flex justify-center overflow-x-auto" />
-                  ) : (
-                    <iframe src={embed.url} className="w-full aspect-video border-0 rounded-2xl" allowFullScreen loading="lazy"></iframe>
-                  )}
+            ) : galleryImages.length > 0 ? (
+              <div className="relative group">
+                <div className="overflow-hidden rounded-3xl border border-white/10 bg-zinc-900/50" ref={emblaRef}>
+                  <div className="flex">
+                    {galleryImages.map((img) => (
+                      <div key={img.id} className="flex-[0_0_100%] min-w-0 relative aspect-video sm:aspect-[21/9]">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img 
+                          src={img.url} 
+                          alt="Gallery image" 
+                          className="absolute inset-0 w-full h-full object-cover"
+                        />
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              ))
+                
+                {/* Navigation Buttons */}
+                <button 
+                  onClick={scrollPrev}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/50 text-white flex items-center justify-center backdrop-blur-sm border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/80"
+                >
+                  <ChevronLeft className="w-6 h-6" />
+                </button>
+                <button 
+                  onClick={scrollNext}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/50 text-white flex items-center justify-center backdrop-blur-sm border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/80"
+                >
+                  <ChevronRight className="w-6 h-6" />
+                </button>
+              </div>
             ) : (
               <div className="text-center text-zinc-500 py-12 border border-dashed border-white/10 rounded-3xl bg-zinc-900/30">
-                No gallery album embedded yet.
+                No images in the gallery yet.
               </div>
             )}
           </div>
@@ -179,12 +211,13 @@ export default function AboutPage() {
               <h2 className="text-3xl font-bold text-white mb-6">Location</h2>
               <div className="aspect-video w-full rounded-2xl overflow-hidden border border-white/10 bg-zinc-800">
                 <iframe 
-                  src="https://maps.google.com/maps?q=M.%20Abdur%20Rahim%20Medical%20College,%20Dinajpur&t=&z=15&ie=UTF8&iwloc=&output=embed" 
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3596.536979601614!2d88.6322303!3d25.6534969!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39fb52914041b65f%3A0x62a5b29c99e13e1!2sM.%20Abdur%20Rahim%20Medical%20College%2C%20Dinajpur!5e0!3m2!1sen!2sbd!4v1710862000000!5m2!1sen!2sbd" 
                   width="100%" 
                   height="100%" 
                   style={{ border: 0 }} 
                   allowFullScreen 
                   loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
                 ></iframe>
               </div>
             </div>

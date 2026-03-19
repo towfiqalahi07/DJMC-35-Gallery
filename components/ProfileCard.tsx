@@ -65,7 +65,7 @@ export function ProfileCard({ profile }: { profile: ProfileProps }) {
               <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/5 text-zinc-300 transition-colors group-hover:bg-white/10 group-hover:text-white">
                 <GraduationCap className="h-3.5 w-3.5" />
               </div>
-              <span className="truncate font-medium">HSC '{profile.hscBatch}</span>
+              <span className="truncate font-medium">HSC &apos;{profile.hscBatch}</span>
             </div>
 
             <div className="flex items-center gap-3 text-sm text-zinc-400">
