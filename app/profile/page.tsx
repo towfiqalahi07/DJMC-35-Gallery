@@ -11,8 +11,14 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [editingField, setEditingField] = useState<'whatsapp' | 'facebook' | null>(null);
+  const [editingField, setEditingField] = useState<'whatsapp' | 'facebook' | 'class_roll' | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [isPhoneVerified, setIsPhoneVerified] = useState(false);
+  const [showOtpInput, setShowOtpInput] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+  const [expectedOtp, setExpectedOtp] = useState('');
   const router = useRouter();
 
   const [formData, setFormData] = useState({
@@ -26,6 +32,7 @@ export default function ProfilePage() {
     district: '',
     whatsapp: '',
     facebook: '',
+    classRoll: '',
   });
 
   useEffect(() => {
@@ -61,6 +68,7 @@ export default function ProfilePage() {
             district: studentData.district || '',
             whatsapp: studentData.whatsapp || '',
             facebook: studentData.facebook || '',
+            classRoll: studentData.class_roll || '',
           });
         } else {
           setFormData(prev => ({
@@ -103,33 +111,72 @@ export default function ProfilePage() {
         district: data.district || '',
         whatsapp: data.whatsapp || '',
         facebook: data.facebook || '',
+        classRoll: data.class_roll || '',
       }));
+      setIsPhoneVerified(true);
       setMessage({ type: 'success', text: 'Phone number found! Autofilled your information.' });
     } else if (data && data.user_id) {
       setMessage({ type: 'error', text: 'This phone number is already linked to another account.' });
     } else {
-      setMessage({ type: 'error', text: 'Phone number not found in database. You will need admin approval.' });
+      // Phone not found, trigger OTP
+      await sendOtp(formData.phone);
     }
     setIsLoading(false);
   };
 
-  const handleInlineSave = async (field: 'whatsapp' | 'facebook') => {
+  const sendOtp = async (phone: string) => {
+    setIsSendingOtp(true);
+    try {
+      const res = await fetch('/api/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setExpectedOtp(data.otp || data.simulatedOtp);
+        setShowOtpInput(true);
+        setMessage({ type: 'success', text: 'OTP sent to your phone. Please verify.' });
+      } else {
+        setMessage({ type: 'error', text: data.error || 'Failed to send OTP.' });
+      }
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Failed to send OTP.' });
+    } finally {
+      setIsSendingOtp(false);
+    }
+  };
+
+  const verifyOtp = () => {
+    setIsVerifyingOtp(true);
+    if (otp === expectedOtp) {
+      setIsPhoneVerified(true);
+      setShowOtpInput(false);
+      setMessage({ type: 'success', text: 'Phone verified successfully! You can now fill out your profile.' });
+    } else {
+      setMessage({ type: 'error', text: 'Invalid OTP. Please try again.' });
+    }
+    setIsVerifyingOtp(false);
+  };
+
+  const handleInlineSave = async (field: 'whatsapp' | 'facebook' | 'class_roll') => {
     setIsSaving(true);
     setMessage(null);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       
       const payload = {
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        hscBatch: formData.hscBatch,
-        college: formData.college,
-        bloodGroup: formData.bloodGroup,
-        admissionRoll: formData.admissionRoll,
-        district: formData.district,
+        name: profile?.name || formData.name,
+        email: profile?.email || formData.email,
+        phone: profile?.phone || formData.phone,
+        hscBatch: profile?.hsc_batch || formData.hscBatch,
+        college: profile?.college || formData.college,
+        bloodGroup: profile?.blood_group || formData.bloodGroup,
+        admissionRoll: profile?.admission_roll || formData.admissionRoll,
+        district: profile?.district || formData.district,
         whatsapp: field === 'whatsapp' ? formData.whatsapp : profile?.whatsapp,
         facebook: field === 'facebook' ? formData.facebook : profile?.facebook,
+        classRoll: field === 'class_roll' ? formData.classRoll : profile?.class_roll,
         photo_url: profile ? profile.photo_url : user.user_metadata.avatar_url,
       };
 
@@ -187,6 +234,7 @@ export default function ProfilePage() {
         district: formData.district,
         whatsapp: formData.whatsapp,
         facebook: formData.facebook,
+        classRoll: formData.classRoll,
         photo_url: profile ? profile.photo_url : user.user_metadata.avatar_url,
       };
 
@@ -291,6 +339,10 @@ export default function ProfilePage() {
                   <div className="text-white font-medium">{profile.admission_roll || <span className="text-zinc-600 italic">Not provided</span>}</div>
                 </div>
                 <div>
+                  <label className="block text-sm font-medium text-zinc-500 mb-1">Class Roll</label>
+                  <div className="text-white font-medium">{profile.class_roll || <span className="text-zinc-600 italic">Not provided</span>}</div>
+                </div>
+                <div>
                   <label className="block text-sm font-medium text-zinc-500 mb-1">Home District</label>
                   <div className="text-white font-medium">{profile.district || <span className="text-zinc-600 italic">Not provided</span>}</div>
                 </div>
@@ -381,79 +433,184 @@ export default function ProfilePage() {
                     </div>
                   )}
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-zinc-500 mb-2">Class Roll</label>
+                  {editingField === 'class_roll' ? (
+                    <div className="flex gap-2">
+                      <input 
+                        type="text"
+                        value={formData.classRoll}
+                        onChange={(e) => setFormData({...formData, classRoll: e.target.value})}
+                        className="flex-1 rounded-xl border border-white/10 bg-zinc-900 py-2 px-3 text-white focus:border-white/20 focus:outline-none"
+                      />
+                      <button onClick={() => handleInlineSave('class_roll')} disabled={isSaving} className="p-2 bg-emerald-500/20 text-emerald-400 rounded-xl hover:bg-emerald-500/30">
+                        {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
+                      </button>
+                      <button onClick={() => {
+                        setFormData({...formData, classRoll: profile.class_roll || ''});
+                        setEditingField(null);
+                      }} disabled={isSaving} className="p-2 bg-zinc-800 text-zinc-400 rounded-xl hover:bg-zinc-700">
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex justify-between items-center bg-zinc-900/30 py-3 px-4 rounded-xl border border-white/5 group">
+                      <div className="flex items-center gap-3 overflow-hidden">
+                        <span className="text-white truncate">{profile.class_roll || <span className="text-zinc-600 italic">Not provided</span>}</span>
+                      </div>
+                      {!profile.class_roll && (
+                        <button 
+                          onClick={() => {
+                            setFormData({...formData, classRoll: profile.class_roll || ''});
+                            setEditingField('class_roll');
+                          }}
+                          className="flex items-center gap-1.5 text-xs font-medium text-zinc-400 hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-2.5 py-1.5 rounded-lg"
+                          title="Edit Class Roll"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                          Edit
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
+          </div>
+        ) : !isPhoneVerified ? (
+          <div className="space-y-6 bg-zinc-900/50 p-6 sm:p-8 rounded-3xl border border-white/5 max-w-md mx-auto">
+            <h2 className="text-xl font-bold text-white mb-4">Verify Your Phone Number</h2>
+            <p className="text-zinc-400 text-sm mb-6">Please enter your phone number. If it's in our database, we'll autofill your profile. Otherwise, we'll send an OTP to verify.</p>
+            
+            {!showOtpInput ? (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-zinc-400 mb-2">Phone Number</label>
+                  <input
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    placeholder="e.g., 017XXXXXXXX"
+                    className="w-full rounded-xl border border-white/10 bg-zinc-900 py-3 px-4 text-white focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/20"
+                  />
+                </div>
+                <button
+                  onClick={handlePhoneCheck}
+                  disabled={isLoading || isSendingOtp || !formData.phone}
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-white px-8 py-3 text-sm font-bold text-black transition-transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading || isSendingOtp ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Check & Verify'}
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-zinc-400 mb-2">Enter OTP</label>
+                  <input
+                    type="text"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value)}
+                    placeholder="4-digit OTP"
+                    className="w-full rounded-xl border border-white/10 bg-zinc-900 py-3 px-4 text-white focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/20 text-center tracking-widest text-lg"
+                    maxLength={4}
+                  />
+                </div>
+                <button
+                  onClick={verifyOtp}
+                  disabled={isVerifyingOtp || otp.length < 4}
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-white px-8 py-3 text-sm font-bold text-black transition-transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isVerifyingOtp ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Verify OTP'}
+                </button>
+                <button
+                  onClick={() => setShowOtpInput(false)}
+                  className="w-full text-sm text-zinc-500 hover:text-white transition-colors"
+                >
+                  Change Phone Number
+                </button>
+              </div>
+            )}
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6 bg-zinc-900/50 p-6 sm:p-8 rounded-3xl border border-white/5">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-zinc-400 mb-2">Full Name <span className="text-xs text-zinc-500">(Admin only)</span></label>
+                <label className="block text-sm font-medium text-zinc-400 mb-2">Full Name</label>
                 <input
                   type="text"
                   value={formData.name}
-                  readOnly
-                  className="w-full rounded-xl border border-white/5 bg-zinc-900/50 py-3 px-4 text-zinc-500 cursor-not-allowed focus:outline-none"
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full rounded-xl border border-white/10 bg-zinc-900 py-3 px-4 text-white focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/20"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-zinc-400 mb-2">Phone Number <span className="text-xs text-zinc-500">(Admin only)</span></label>
+                <label className="block text-sm font-medium text-zinc-400 mb-2">Phone Number</label>
                 <input
                   type="tel"
                   value={formData.phone}
                   readOnly
-                  placeholder="Admin will set this"
                   className="w-full rounded-xl border border-white/5 bg-zinc-900/50 py-3 px-4 text-zinc-500 cursor-not-allowed focus:outline-none"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-zinc-400 mb-2">HSC Batch <span className="text-xs text-zinc-500">(Admin only)</span></label>
+                <label className="block text-sm font-medium text-zinc-400 mb-2">HSC Batch</label>
                 <input
                   type="text"
                   value={formData.hscBatch}
-                  readOnly
-                  className="w-full rounded-xl border border-white/5 bg-zinc-900/50 py-3 px-4 text-zinc-500 cursor-not-allowed focus:outline-none"
+                  onChange={(e) => setFormData({ ...formData, hscBatch: e.target.value })}
+                  className="w-full rounded-xl border border-white/10 bg-zinc-900 py-3 px-4 text-white focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/20"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-zinc-400 mb-2">Previous College <span className="text-xs text-zinc-500">(Admin only)</span></label>
+                <label className="block text-sm font-medium text-zinc-400 mb-2">Previous College</label>
                 <input
                   type="text"
                   value={formData.college}
-                  readOnly
-                  className="w-full rounded-xl border border-white/5 bg-zinc-900/50 py-3 px-4 text-zinc-500 cursor-not-allowed focus:outline-none"
+                  onChange={(e) => setFormData({ ...formData, college: e.target.value })}
+                  className="w-full rounded-xl border border-white/10 bg-zinc-900 py-3 px-4 text-white focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/20"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-zinc-400 mb-2">Blood Group <span className="text-xs text-zinc-500">(Admin only)</span></label>
+                <label className="block text-sm font-medium text-zinc-400 mb-2">Blood Group</label>
                 <input
                   type="text"
                   value={formData.bloodGroup}
-                  readOnly
-                  className="w-full rounded-xl border border-white/5 bg-zinc-900/50 py-3 px-4 text-zinc-500 cursor-not-allowed focus:outline-none"
+                  onChange={(e) => setFormData({ ...formData, bloodGroup: e.target.value })}
+                  className="w-full rounded-xl border border-white/10 bg-zinc-900 py-3 px-4 text-white focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/20"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-zinc-400 mb-2">MAT Roll <span className="text-xs text-zinc-500">(Admin only)</span></label>
+                <label className="block text-sm font-medium text-zinc-400 mb-2">MAT Roll</label>
                 <input
                   type="text"
                   value={formData.admissionRoll}
-                  readOnly
-                  className="w-full rounded-xl border border-white/5 bg-zinc-900/50 py-3 px-4 text-zinc-500 cursor-not-allowed focus:outline-none"
+                  onChange={(e) => setFormData({ ...formData, admissionRoll: e.target.value })}
+                  className="w-full rounded-xl border border-white/10 bg-zinc-900 py-3 px-4 text-white focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/20"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-zinc-400 mb-2">Home District <span className="text-xs text-zinc-500">(Admin only)</span></label>
+                <label className="block text-sm font-medium text-zinc-400 mb-2">Home District</label>
                 <input
                   type="text"
                   value={formData.district}
-                  readOnly
-                  className="w-full rounded-xl border border-white/5 bg-zinc-900/50 py-3 px-4 text-zinc-500 cursor-not-allowed focus:outline-none"
+                  onChange={(e) => setFormData({ ...formData, district: e.target.value })}
+                  className="w-full rounded-xl border border-white/10 bg-zinc-900 py-3 px-4 text-white focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/20"
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-zinc-400 mb-2">Class Roll <span className="text-xs text-zinc-500">(Optional for now)</span></label>
+                <input
+                  type="text"
+                  value={formData.classRoll}
+                  onChange={(e) => setFormData({ ...formData, classRoll: e.target.value })}
+                  className="w-full rounded-xl border border-white/10 bg-zinc-900 py-3 px-4 text-white focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/20"
+                />
+              </div>
+              
               <div>
                 <label className="block text-sm font-medium text-zinc-400 mb-2">WhatsApp Number</label>
                 <input
@@ -464,7 +621,7 @@ export default function ProfilePage() {
                 />
               </div>
               
-              <div className="sm:col-span-2">
+              <div>
                 <label className="block text-sm font-medium text-zinc-400 mb-2">Facebook Profile Link</label>
                 <input
                   type="url"

@@ -54,6 +54,7 @@ export async function POST(req: Request) {
       district: body.district,
       whatsapp: body.whatsapp,
       facebook: body.facebook,
+      class_roll: body.classRoll,
       photo_url: body.photo_url,
     };
 
