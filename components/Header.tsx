@@ -52,9 +52,14 @@ export default function Header() {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-black font-bold text-xl">
             D
           </div>
-          <span className="text-lg font-semibold tracking-tight text-white">
-            DjMC 35
-          </span>
+          <div className="flex flex-col">
+            <span className="text-lg font-semibold tracking-tight text-white leading-none">
+              DjMC 35
+            </span>
+            <span className="text-[10px] font-medium text-zinc-400 uppercase tracking-wider mt-0.5 leading-none">
+              Dinajpur Medical College
+            </span>
+          </div>
         </Link>
         
         <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-zinc-400">
@@ -65,30 +70,28 @@ export default function Header() {
           ))}
         </nav>
 
-        <div className="hidden md:flex items-center gap-4">
+        <div className="flex items-center gap-3 md:gap-4">
           {user ? (
             <Link
               href="/profile"
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-zinc-800 px-4 py-2 text-sm font-medium text-white transition-transform hover:scale-105 active:scale-95"
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-zinc-800 px-3 py-1.5 md:px-4 md:py-2 text-sm font-medium text-white transition-transform hover:scale-105 active:scale-95"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={user.user_metadata.avatar_url} alt="Avatar" className="w-5 h-5 rounded-full" />
-              <span>Profile</span>
+              <img src={user.user_metadata.avatar_url} alt="Avatar" className="w-5 h-5 md:w-5 md:h-5 rounded-full" />
+              <span className="hidden sm:inline">Profile</span>
             </Link>
           ) : (
             <button
               onClick={handleSignIn}
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-medium text-black transition-transform hover:scale-105 active:scale-95"
+              className="hidden md:inline-flex items-center justify-center gap-1.5 md:gap-2 rounded-full bg-white px-3 py-1.5 md:px-4 md:py-2 text-sm font-medium text-black transition-transform hover:scale-105 active:scale-95"
             >
               <LogIn className="h-4 w-4" />
-              <span>Sign In</span>
+              <span className="text-xs sm:text-sm font-bold">Sign In</span>
             </button>
           )}
-        </div>
 
-        {/* Mobile menu button */}
-        <div className="md:hidden flex items-center gap-4">
-          <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-zinc-400 hover:text-white">
+          {/* Mobile menu button */}
+          <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="md:hidden text-zinc-400 hover:text-white p-1">
             {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
         </div>
@@ -108,28 +111,29 @@ export default function Header() {
                 {link.name}
               </Link>
             ))}
-            <div className="mt-4 pt-4 border-t border-white/5 flex flex-col gap-2">
-              {user ? (
-                <Link
-                  href="/profile"
-                  className="flex items-center gap-2 rounded-md px-3 py-2 text-base font-medium text-white bg-zinc-800"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={user.user_metadata.avatar_url} alt="Avatar" className="w-5 h-5 rounded-full" />
-                  <span>Profile</span>
-                </Link>
-              ) : (
-                <button
-                  onClick={() => { handleSignIn(); setIsMenuOpen(false); }}
-                  className="flex items-center gap-2 rounded-md px-3 py-2 text-base font-medium text-black bg-white"
-                >
-                  <LogIn className="h-5 w-5" />
-                  <span>Sign In</span>
-                </button>
-              )}
-            </div>
+            {!user && (
+              <button
+                onClick={handleSignIn}
+                className="mt-4 w-full flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-base font-bold text-black transition-transform hover:scale-105 active:scale-95"
+              >
+                <LogIn className="h-5 w-5" />
+                Sign In
+              </button>
+            )}
           </div>
+        </div>
+      )}
+
+      {/* Fixed Mobile Sign In Button (Bottom) */}
+      {!user && (
+        <div className="md:hidden fixed bottom-4 left-4 right-4 z-50">
+          <button
+            onClick={handleSignIn}
+            className="w-full flex items-center justify-center gap-2 rounded-full bg-white px-6 py-4 text-base font-bold text-black shadow-[0_0_40px_rgba(255,255,255,0.2)] transition-transform hover:scale-105 active:scale-95"
+          >
+            <LogIn className="h-5 w-5" />
+            Sign In to Access Profile
+          </button>
         </div>
       )}
     </header>

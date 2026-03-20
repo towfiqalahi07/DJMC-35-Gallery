@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Loader2, CheckCircle, XCircle, ShieldAlert, Trash2, Plus, Image as ImageIcon } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, ShieldAlert, Trash2, Plus, Image as ImageIcon, GripVertical } from 'lucide-react';
 import Image from 'next/image';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
 interface ProfileProps {
   id: string;
@@ -32,6 +33,7 @@ export default function AdminPage() {
   const [isGalleryLoading, setIsGalleryLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [selectedImages, setSelectedImages] = useState<string[]>([]);
 
   const fetchGallery = async () => {
     try {
@@ -155,8 +157,64 @@ export default function AdminPage() {
       if (!res.ok) throw new Error('Failed to delete image');
 
       setGalleryImages(galleryImages.filter(img => img.id !== id));
+      setSelectedImages(selectedImages.filter(selectedId => selectedId !== id));
     } catch (err: any) {
       alert(err.message);
+    }
+  };
+
+  const toggleImageSelection = (id: string) => {
+    setSelectedImages(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedImages.length === 0) return;
+    if (!confirm(`Are you sure you want to delete ${selectedImages.length} images?`)) return;
+
+    setIsGalleryLoading(true);
+    try {
+      const res = await fetch('/api/admin/gallery', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-password': password,
+        },
+        body: JSON.stringify({ ids: selectedImages }),
+      });
+
+      if (!res.ok) throw new Error('Failed to delete images');
+
+      setGalleryImages(galleryImages.filter(img => !selectedImages.includes(img.id)));
+      setSelectedImages([]);
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setIsGalleryLoading(false);
+    }
+  };
+
+  const handleDragEnd = async (result: any) => {
+    if (!result.destination) return;
+
+    const items = Array.from(galleryImages);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+
+    setGalleryImages(items);
+
+    try {
+      await fetch('/api/admin/gallery/reorder', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-password': password,
+        },
+        body: JSON.stringify({ orderedIds: items.map(img => img.id) }),
+      });
+    } catch (err) {
+      console.error('Failed to save reordered gallery:', err);
     }
   };
 
@@ -252,7 +310,35 @@ export default function AdminPage() {
         )}
 
         <div className="mt-12 space-y-6">
-          <h2 className="text-2xl font-bold text-white">Manage Gallery</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-white">Manage Gallery</h2>
+            <div className="flex items-center gap-2">
+              {galleryImages.length > 0 && (
+                <button
+                  onClick={() => {
+                    if (selectedImages.length === galleryImages.length) {
+                      setSelectedImages([]);
+                    } else {
+                      setSelectedImages(galleryImages.map(img => img.id));
+                    }
+                  }}
+                  className="px-4 py-2 rounded-lg bg-zinc-800 text-zinc-300 hover:bg-zinc-700 transition-colors font-medium text-sm"
+                >
+                  {selectedImages.length === galleryImages.length ? 'Deselect All' : 'Select All'}
+                </button>
+              )}
+              {selectedImages.length > 0 && (
+                <button
+                  onClick={handleBulkDelete}
+                  disabled={isGalleryLoading}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors font-medium text-sm"
+                >
+                  {isGalleryLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                  Delete Selected ({selectedImages.length})
+                </button>
+              )}
+            </div>
+          </div>
           <div className="bg-zinc-900/50 border border-white/10 rounded-2xl p-6">
             <form onSubmit={handleAddGalleryImage} className="flex flex-col sm:flex-row gap-4 mb-8">
               <input
@@ -279,23 +365,59 @@ export default function AdminPage() {
                 <p className="text-zinc-500">No images in the gallery yet.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                {galleryImages.map((img) => (
-                  <div key={img.id} className="group relative aspect-video rounded-xl overflow-hidden border border-white/10 bg-zinc-800">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={img.url} alt="Gallery image" className="object-cover w-full h-full" />
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <button
-                        onClick={() => handleDeleteGalleryImage(img.id)}
-                        className="h-10 w-10 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors"
-                        title="Delete image"
-                      >
-                        <Trash2 className="h-5 w-5" />
-                      </button>
+              <DragDropContext onDragEnd={handleDragEnd}>
+                <Droppable droppableId="gallery" direction="horizontal">
+                  {(provided) => (
+                    <div 
+                      {...provided.droppableProps}
+                      ref={provided.innerRef}
+                      className="flex flex-wrap gap-4"
+                    >
+                      {galleryImages.map((img, index) => (
+                        <Draggable key={img.id} draggableId={img.id} index={index}>
+                          {(provided) => (
+                            <div 
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              className="group relative aspect-video w-[calc(50%-0.5rem)] sm:w-[calc(33.333%-0.667rem)] md:w-[calc(25%-0.75rem)] rounded-xl overflow-hidden border border-white/10 bg-zinc-800"
+                            >
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={img.url} alt="Gallery image" className="object-cover w-full h-full" />
+                              
+                              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                <div 
+                                  {...provided.dragHandleProps}
+                                  className="h-10 w-10 rounded-full bg-white/20 text-white flex items-center justify-center hover:bg-white/40 transition-colors cursor-grab active:cursor-grabbing"
+                                  title="Drag to reorder"
+                                >
+                                  <GripVertical className="h-5 w-5" />
+                                </div>
+                                <button
+                                  onClick={() => handleDeleteGalleryImage(img.id)}
+                                  className="h-10 w-10 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors"
+                                  title="Delete image"
+                                >
+                                  <Trash2 className="h-5 w-5" />
+                                </button>
+                              </div>
+
+                              <div className="absolute top-2 left-2 z-10">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedImages.includes(img.id)}
+                                  onChange={() => toggleImageSelection(img.id)}
+                                  className="h-5 w-5 rounded border-white/20 bg-black/50 text-emerald-500 focus:ring-emerald-500/20 cursor-pointer"
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
                     </div>
-                  </div>
-                ))}
-              </div>
+                  )}
+                </Droppable>
+              </DragDropContext>
             )}
           </div>
         </div>
@@ -303,9 +425,9 @@ export default function AdminPage() {
         <div className="mt-12 space-y-6">
           <h2 className="text-2xl font-bold text-white">Manage Content</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <a href="https://supabase.com/dashboard" target="_blank" rel="noopener noreferrer" className="p-6 rounded-2xl bg-zinc-900/50 border border-white/5 hover:border-white/20 transition-colors group">
-              <h3 className="font-bold text-white group-hover:text-blue-400">Supabase Dashboard</h3>
-              <p className="text-sm text-zinc-400 mt-1">Manage all database tables, announcements, events, and resources directly from Supabase.</p>
+            <a href="/admin/content" className="p-6 rounded-2xl bg-zinc-900/50 border border-white/5 hover:border-white/20 transition-colors group">
+              <h3 className="font-bold text-white group-hover:text-blue-400">Content Management</h3>
+              <p className="text-sm text-zinc-400 mt-1">Add, edit, and delete announcements, events, and resources.</p>
             </a>
             <a href="/admin/polls" className="p-6 rounded-2xl bg-zinc-900/50 border border-white/5 hover:border-white/20 transition-colors group">
               <h3 className="font-bold text-white group-hover:text-blue-400">Manage Polls</h3>
@@ -313,7 +435,7 @@ export default function AdminPage() {
             </a>
             <div className="p-6 rounded-2xl bg-zinc-900/50 border border-white/5">
               <h3 className="font-bold text-white">Marquee Notice</h3>
-              <p className="text-sm text-zinc-400 mt-1 mb-4">To update the scrolling notice, go to Supabase `announcements` table and set `is_marquee` to true for the desired notice.</p>
+              <p className="text-sm text-zinc-400 mt-1 mb-4">You can set an announcement as a marquee notice in the Content Management section.</p>
             </div>
           </div>
         </div>

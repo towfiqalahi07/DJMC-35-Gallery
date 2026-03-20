@@ -35,14 +35,27 @@ export async function DELETE(req: Request) {
   if (!checkAuth(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
-    const { id } = await req.json();
-    if (!id) return NextResponse.json({ error: 'ID is required' }, { status: 400 });
+    const { id, ids } = await req.json();
+    if (!id && (!ids || !Array.isArray(ids) || ids.length === 0)) {
+      return NextResponse.json({ error: 'ID or IDs array is required' }, { status: 400 });
+    }
 
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-    const { error } = await supabaseAdmin
-      .from('gallery_images')
-      .delete()
-      .eq('id', id);
+    
+    let error;
+    if (ids && Array.isArray(ids)) {
+      const { error: bulkError } = await supabaseAdmin
+        .from('gallery_images')
+        .delete()
+        .in('id', ids);
+      error = bulkError;
+    } else {
+      const { error: singleError } = await supabaseAdmin
+        .from('gallery_images')
+        .delete()
+        .eq('id', id);
+      error = singleError;
+    }
 
     if (error) throw error;
     return NextResponse.json({ success: true });

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Users, Calendar, MapPin, ArrowRight, BookOpen, Bell, GraduationCap, Link as LinkIcon } from 'lucide-react';
+import { Users, Calendar, MapPin, ArrowRight, BookOpen, Bell, GraduationCap, Link as LinkIcon, LogIn } from 'lucide-react';
 import Header from '@/components/Header';
 import Marquee from '@/components/Marquee';
 import { useEffect, useState } from 'react';
@@ -10,8 +10,17 @@ import { supabase } from '@/lib/supabase';
 export default function HomePage() {
   const [announcements, setAnnouncements] = useState<any[]>([]);
   const [events, setEvents] = useState<any[]>([]);
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user ?? null);
+    });
+
     async function fetchData() {
       // Fetch announcements
       const { data: annData } = await supabase
@@ -30,7 +39,18 @@ export default function HomePage() {
       if (evData) setEvents(evData);
     }
     fetchData();
+
+    return () => subscription.unsubscribe();
   }, []);
+
+  const handleSignIn = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/profile`,
+      },
+    });
+  };
 
   return (
     <div className="min-h-screen bg-black text-zinc-300 selection:bg-zinc-800 selection:text-white flex flex-col">
@@ -55,6 +75,18 @@ export default function HomePage() {
               <h2 className="text-3xl md:text-5xl font-bold text-blue-400">DjMC 35</h2>
               <h2 className="text-4xl md:text-6xl font-bold text-blue-400 font-bengali mt-2">প্রত্যুষ্মান ৩৫</h2>
             </div>
+
+            {!user && (
+              <div className="mt-10 flex justify-center">
+                <button
+                  onClick={handleSignIn}
+                  className="group flex items-center gap-2 rounded-full bg-white px-8 py-4 text-base font-semibold text-black transition-all hover:scale-105 hover:shadow-[0_0_20px_rgba(255,255,255,0.3)] active:scale-95"
+                >
+                  <LogIn className="h-5 w-5" />
+                  Sign In to Access Profile
+                </button>
+              </div>
+            )}
           </div>
         </section>
 

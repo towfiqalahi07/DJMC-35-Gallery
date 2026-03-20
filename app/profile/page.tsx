@@ -481,7 +481,7 @@ export default function ProfilePage() {
         ) : !isPhoneVerified ? (
           <div className="space-y-6 bg-zinc-900/50 p-6 sm:p-8 rounded-3xl border border-white/5 max-w-md mx-auto">
             <h2 className="text-xl font-bold text-white mb-4">Verify Your Phone Number</h2>
-            <p className="text-zinc-400 text-sm mb-6">Please enter your phone number. If it's in our database, we'll autofill your profile. Otherwise, we'll send an OTP to verify.</p>
+            <p className="text-zinc-400 text-sm mb-6">Please enter your phone number. If it&apos;s in our database, we&apos;ll autofill your profile. Otherwise, we&apos;ll send an OTP to verify.</p>
             
             {!showOtpInput ? (
               <div className="space-y-4">
