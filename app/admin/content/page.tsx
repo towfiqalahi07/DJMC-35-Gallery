@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Loader2, Plus, Edit, Trash2, ShieldAlert, Bell, Calendar, BookOpen, X } from 'lucide-react';
+import { Loader2, Plus, Edit, Trash2, ShieldAlert, Bell, Calendar, BookOpen, X, XCircle } from 'lucide-react';
+import Image from 'next/image';
 import Header from '@/components/Header';
 
-type ContentType = 'announcements' | 'events' | 'resources';
+type ContentType = 'announcements' | 'events' | 'resources' | 'info_requests';
 
 export default function AdminContentPage() {
   const [password, setPassword] = useState('');
@@ -18,6 +19,28 @@ export default function AdminContentPage() {
   const [editingItem, setEditingItem] = useState<any | null>(null);
   
   const [formData, setFormData] = useState<any>({});
+  
+  const [viewingSubmissionsFor, setViewingSubmissionsFor] = useState<string | null>(null);
+  const [submissionsData, setSubmissionsData] = useState<any[]>([]);
+  const [isFetchingSubmissions, setIsFetchingSubmissions] = useState(false);
+
+  const handleViewSubmissions = async (id: string) => {
+    setViewingSubmissionsFor(id);
+    setIsFetchingSubmissions(true);
+    try {
+      const res = await fetch(`/api/admin/pr/submissions?requestId=${id}`, {
+        headers: { 'x-admin-password': password }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSubmissionsData(data.submissions || []);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsFetchingSubmissions(false);
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,6 +105,8 @@ export default function AdminContentPage() {
       setFormData({ title: '', description: '', date: new Date().toISOString().slice(0, 16), location: '', attachment_url: '', tag: 'Upcoming' });
     } else if (activeTab === 'resources') {
       setFormData({ title: '', description: '', category: 'Books', url: '' });
+    } else if (activeTab === 'info_requests') {
+      setFormData({ title: '', description: '', fields: [{ name: '', type: 'text' }], is_active: true });
     }
     setIsCreating(true);
   };
@@ -278,6 +303,15 @@ export default function AdminContentPage() {
               <BookOpen className="h-4 w-4" />
               Resources
             </button>
+            <button
+              onClick={() => setActiveTab('info_requests')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${
+                activeTab === 'info_requests' ? 'bg-orange-500/10 text-orange-400' : 'text-zinc-400 hover:text-white'
+              }`}
+            >
+              <Bell className="h-4 w-4" />
+              Info Requests
+            </button>
           </div>
         )}
 
@@ -450,6 +484,80 @@ export default function AdminContentPage() {
                 </>
               )}
 
+              {activeTab === 'info_requests' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-400 mb-2">Description</label>
+                    <textarea
+                      value={formData.description || ''}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      className="w-full rounded-xl border border-white/10 bg-zinc-900 py-3 px-4 text-white focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/20 min-h-[100px]"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-400 mb-2">Fields</label>
+                    <div className="space-y-3">
+                      {(formData.fields || []).map((field: any, index: number) => (
+                        <div key={index} className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={field.name}
+                            onChange={(e) => {
+                              const newFields = [...formData.fields];
+                              newFields[index].name = e.target.value;
+                              setFormData({ ...formData, fields: newFields });
+                            }}
+                            placeholder="Field Name (e.g., Phone Number)"
+                            className="flex-1 rounded-xl border border-white/10 bg-zinc-900 py-3 px-4 text-white focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/20"
+                            required
+                          />
+                          <select
+                            value={field.type}
+                            onChange={(e) => {
+                              const newFields = [...formData.fields];
+                              newFields[index].type = e.target.value;
+                              setFormData({ ...formData, fields: newFields });
+                            }}
+                            className="w-32 rounded-xl border border-white/10 bg-zinc-900 py-3 px-4 text-white focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/20"
+                          >
+                            <option value="text">Text</option>
+                            <option value="number">Number</option>
+                            <option value="image">Image</option>
+                          </select>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newFields = formData.fields.filter((_: any, i: number) => i !== index);
+                              setFormData({ ...formData, fields: newFields });
+                            }}
+                            className="p-3 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors"
+                          >
+                            <Trash2 className="h-5 w-5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, fields: [...(formData.fields || []), { name: '', type: 'text' }] })}
+                      className="mt-3 flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300 font-medium"
+                    >
+                      <Plus className="h-4 w-4" /> Add Field
+                    </button>
+                  </div>
+                  <label className="flex items-center gap-2 cursor-pointer pt-4">
+                    <input
+                      type="checkbox"
+                      checked={formData.is_active ?? true}
+                      onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                      className="w-5 h-5 rounded border-white/10 bg-zinc-900 text-blue-500 focus:ring-blue-500/20"
+                    />
+                    <span className="text-sm font-medium text-white">Active (Visible to users)</span>
+                  </label>
+                </>
+              )}
+
               <div className="flex justify-end gap-3 pt-6 border-t border-white/5">
                 <button
                   type="button"
@@ -502,6 +610,14 @@ export default function AdminContentPage() {
                   </div>
                   
                   <div className="flex items-center gap-2">
+                    {activeTab === 'info_requests' && (
+                      <button
+                        onClick={() => handleViewSubmissions(item.id)}
+                        className="px-4 py-2 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors text-sm font-medium"
+                      >
+                        View Submissions
+                      </button>
+                    )}
                     <button
                       onClick={() => handleEdit(item)}
                       className="p-2 rounded-lg bg-zinc-800 text-white hover:bg-zinc-700 transition-colors"
@@ -523,6 +639,67 @@ export default function AdminContentPage() {
           </div>
         )}
       </main>
+
+      {viewingSubmissionsFor && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+          <div className="bg-zinc-900 border border-white/10 rounded-2xl w-full max-w-4xl max-h-[80vh] flex flex-col">
+            <div className="p-6 border-b border-white/10 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-white">Submissions</h2>
+              <button
+                onClick={() => setViewingSubmissionsFor(null)}
+                className="text-zinc-400 hover:text-white"
+              >
+                <XCircle className="h-6 w-6" />
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto flex-1">
+              {isFetchingSubmissions ? (
+                <div className="flex justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-zinc-500" />
+                </div>
+              ) : submissionsData.length === 0 ? (
+                <div className="text-center py-12 text-zinc-500">
+                  No submissions yet.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {submissionsData.map((sub) => (
+                    <div key={sub.id} className="bg-black/50 border border-white/5 rounded-xl p-4">
+                      <div className="flex items-center justify-between mb-4 pb-4 border-b border-white/5">
+                        <div>
+                          <p className="font-medium text-white">{sub.profiles?.name || 'Unknown User'}</p>
+                          <p className="text-sm text-zinc-500">Roll: {sub.profiles?.admission_roll || 'N/A'}</p>
+                        </div>
+                        <div className="text-sm text-zinc-500">
+                          {new Date(sub.created_at).toLocaleString()}
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {Object.entries(sub.data || {}).map(([key, value]) => (
+                          <div key={key}>
+                            <p className="text-xs text-zinc-500 mb-1">{key}</p>
+                            {typeof value === 'string' && value.startsWith('data:image/') ? (
+                              <div className="mt-2 relative h-32 w-full max-w-xs rounded-lg overflow-hidden border border-white/10">
+                                <Image src={value} alt={key} fill className="object-cover" />
+                              </div>
+                            ) : typeof value === 'string' && value.startsWith('http') ? (
+                              <a href={value} target="_blank" rel="noreferrer" className="text-blue-400 hover:underline text-sm break-all">
+                                {value}
+                              </a>
+                            ) : (
+                              <p className="text-sm text-zinc-300 break-words">{String(value)}</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
+export const runtime = 'edge';
+
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
@@ -11,7 +13,7 @@ const checkAuth = (req: Request) => {
   return adminPassword === expectedPassword;
 };
 
-const ALLOWED_TABLES = ['announcements', 'events', 'resources'];
+const ALLOWED_TABLES = ['announcements', 'events', 'resources', 'info_requests'];
 
 export async function GET(req: Request) {
   if (!checkAuth(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -27,7 +29,7 @@ export async function GET(req: Request) {
   const { data, error } = await supabaseAdmin
     .from(table)
     .select('*')
-    .order(table === 'resources' ? 'created_at' : 'date', { ascending: false });
+    .order(table === 'resources' || table === 'info_requests' ? 'created_at' : 'date', { ascending: false });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ data });

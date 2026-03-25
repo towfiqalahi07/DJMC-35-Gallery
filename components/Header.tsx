@@ -41,7 +41,7 @@ export default function Header() {
     { name: 'About Batch', href: '/about' },
     { name: 'Announcements', href: '/announcements' },
     { name: 'Resources', href: '/resources' },
-    { name: 'Polls', href: '/polls' },
+    { name: 'PR', href: '/pr' },
     { name: 'Statistics', href: '/stats' },
   ];
 
