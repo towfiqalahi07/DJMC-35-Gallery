@@ -70,6 +70,7 @@ export default function AdminContentPage() {
 
   const fetchData = async (table: ContentType) => {
     setIsLoading(true);
+    setData([]);
     try {
       const res = await fetch(`/api/admin/content?table=${table}`, {
         headers: {
@@ -100,11 +101,11 @@ export default function AdminContentPage() {
   const handleCreateNew = () => {
     setEditingItem(null);
     if (activeTab === 'announcements') {
-      setFormData({ title: '', content: '', attachment_url: '', is_marquee: false, category: 'General' });
+      setFormData({ title: '', content: '', attachment_url: '', is_marquee: false, is_pinned: false, category: 'General' });
     } else if (activeTab === 'events') {
       setFormData({ title: '', description: '', date: new Date().toISOString().slice(0, 16), location: '', attachment_url: '', tag: 'Upcoming' });
     } else if (activeTab === 'resources') {
-      setFormData({ title: '', description: '', category: 'Books', url: '' });
+      setFormData({ title: '', description: '', author: '', category: 'Books', url: '' });
     } else if (activeTab === 'info_requests') {
       setFormData({ title: '', description: '', fields: [{ name: '', type: 'text' }], is_active: true });
     }
@@ -392,15 +393,26 @@ export default function AdminContentPage() {
                       className="w-full rounded-xl border border-white/10 bg-zinc-900 py-3 px-4 text-white focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/20"
                     />
                   </div>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={formData.is_marquee || false}
-                      onChange={(e) => setFormData({ ...formData, is_marquee: e.target.checked })}
-                      className="w-5 h-5 rounded border-white/10 bg-zinc-900 text-blue-500 focus:ring-blue-500/20"
-                    />
-                    <span className="text-sm font-medium text-white">Show in scrolling marquee on homepage</span>
-                  </label>
+                  <div className="flex flex-col gap-4">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.is_marquee || false}
+                        onChange={(e) => setFormData({ ...formData, is_marquee: e.target.checked })}
+                        className="w-5 h-5 rounded border-white/10 bg-zinc-900 text-blue-500 focus:ring-blue-500/20"
+                      />
+                      <span className="text-sm font-medium text-white">Show in scrolling marquee on homepage</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.is_pinned || false}
+                        onChange={(e) => setFormData({ ...formData, is_pinned: e.target.checked })}
+                        className="w-5 h-5 rounded border-white/10 bg-zinc-900 text-blue-500 focus:ring-blue-500/20"
+                      />
+                      <span className="text-sm font-medium text-white">Pin this announcement to the top</span>
+                    </label>
+                  </div>
                 </>
               )}
 
@@ -475,15 +487,24 @@ export default function AdminContentPage() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-zinc-400 mb-2">Resource URL</label>
+                      <label className="block text-sm font-medium text-zinc-400 mb-2">Author (Optional)</label>
                       <input
-                        type="url"
-                        value={formData.url || ''}
-                        onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+                        type="text"
+                        value={formData.author || ''}
+                        onChange={(e) => setFormData({ ...formData, author: e.target.value })}
                         className="w-full rounded-xl border border-white/10 bg-zinc-900 py-3 px-4 text-white focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/20"
-                        required
                       />
                     </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-400 mb-2">Resource URL</label>
+                    <input
+                      type="url"
+                      value={formData.url || ''}
+                      onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+                      className="w-full rounded-xl border border-white/10 bg-zinc-900 py-3 px-4 text-white focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/20"
+                      required
+                    />
                   </div>
                 </>
               )}

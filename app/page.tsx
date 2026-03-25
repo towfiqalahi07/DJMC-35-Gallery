@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Users, Calendar, MapPin, ArrowRight, BookOpen, Bell, GraduationCap, Link as LinkIcon, LogIn } from 'lucide-react';
+import { Users, Calendar, MapPin, ArrowRight, BookOpen, Bell, GraduationCap, Link as LinkIcon, LogIn, Pin } from 'lucide-react';
 import Header from '@/components/Header';
 import Marquee from '@/components/Marquee';
 import { useEffect, useState } from 'react';
@@ -26,6 +26,7 @@ export default function HomePage() {
       const { data: annData } = await supabase
         .from('announcements')
         .select('*')
+        .order('is_pinned', { ascending: false, nullsFirst: false })
         .order('date', { ascending: false })
         .limit(3);
       if (annData) setAnnouncements(annData);
@@ -53,7 +54,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-zinc-300 selection:bg-zinc-800 selection:text-white flex flex-col">
+    <div className="flex-1 bg-black text-zinc-300 selection:bg-zinc-800 selection:text-white flex flex-col">
       <Header />
       <Marquee />
 
@@ -150,6 +151,7 @@ export default function HomePage() {
                   return (
                     <Link key={ann.id} href={`/announcements?id=${ann.id}`} className="block p-6 rounded-2xl bg-zinc-900/50 border border-white/5 hover:border-white/20 transition-colors group">
                       <div className="flex items-center gap-3 mb-2">
+                        {ann.is_pinned && <Pin className="h-4 w-4 text-blue-400 fill-blue-400/20" />}
                         <h4 className="text-lg font-semibold text-white group-hover:text-blue-400 transition-colors">{title}</h4>
                         <span className={`px-2 py-0.5 rounded text-[10px] font-medium uppercase tracking-wider ${
                           category === 'Urgent' ? 'bg-red-500/10 text-red-400' : 'bg-blue-500/10 text-blue-400'

@@ -77,7 +77,7 @@ export default function DirectoryPage() {
   const uniqueDivisions = Object.keys(divisionToDistricts).sort();
 
   return (
-    <div className="min-h-screen bg-black text-zinc-300 selection:bg-zinc-800 selection:text-white flex flex-col">
+    <div className="flex-1 bg-black text-zinc-300 selection:bg-zinc-800 selection:text-white flex flex-col">
       <Header />
 
       {/* Main Content */}

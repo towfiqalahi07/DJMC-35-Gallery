@@ -60,7 +60,7 @@ export default function AboutPage() {
   }, [filteredImages, emblaApi]);
 
   return (
-    <div className="min-h-screen bg-black text-zinc-300 selection:bg-zinc-800 selection:text-white flex flex-col">
+    <div className="flex-1 bg-black text-zinc-300 selection:bg-zinc-800 selection:text-white flex flex-col">
       <Header />
 
       <main className="flex-1">

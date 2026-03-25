@@ -1,6 +1,7 @@
 import type {Metadata} from 'next';
 import { Hind_Siliguri } from 'next/font/google';
 import './globals.css'; // Global styles
+import Footer from '@/components/Footer';
 
 const hindSiliguri = Hind_Siliguri({
   weight: ['400', '500', '600', '700'],
@@ -16,7 +17,10 @@ export const metadata: Metadata = {
 export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
     <html lang="en">
-      <body className={`${hindSiliguri.variable} font-sans`} suppressHydrationWarning>{children}</body>
+      <body className={`${hindSiliguri.variable} font-sans flex flex-col min-h-screen`} suppressHydrationWarning>
+        {children}
+        <Footer />
+      </body>
     </html>
   );
 }
