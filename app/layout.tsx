@@ -11,11 +11,13 @@ const hindSiliguri = Hind_Siliguri({
 
 
 
-export const metadata: Metadata = {
+export const metadata = {
   title: "DJMC '35 Batch Directory",
-  description: "The unofficial database for DjMC Batch 35. Find your batchmates, explore districts, and stay connected.",
+  description:
+    "The unofficial database for DjMC Batch 35. Find your batchmates, explore districts, and stay connected.",
   verification: {
     google: "NHPo7_4X-8UMBKoFM5txoRK5AWhXAYvPSLxwLBZASuI",
+  },
 };
 
 export default function RootLayout({children}: {children: React.ReactNode}) {
