@@ -139,15 +139,31 @@ export default function HomePage() {
               </div>
               
               <div className="space-y-4">
-                {announcements.length > 0 ? announcements.map((ann) => (
-                  <Link key={ann.id} href={`/announcements?id=${ann.id}`} className="block p-6 rounded-2xl bg-zinc-900/50 border border-white/5 hover:border-white/20 transition-colors group">
-                    <h4 className="text-lg font-semibold text-white group-hover:text-blue-400 transition-colors">{ann.title}</h4>
-                    <p className="mt-2 text-zinc-400 line-clamp-2">{ann.content}</p>
-                    <div className="mt-4 text-xs text-zinc-500">
-                      {new Date(ann.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-                    </div>
-                  </Link>
-                )) : (
+                {announcements.length > 0 ? announcements.map((ann) => {
+                  let title = ann.title;
+                  let category = 'General';
+                  const match = title.match(/^\[(.*?)\]\s*(.*)$/);
+                  if (match) {
+                    category = match[1];
+                    title = match[2];
+                  }
+                  return (
+                    <Link key={ann.id} href={`/announcements?id=${ann.id}`} className="block p-6 rounded-2xl bg-zinc-900/50 border border-white/5 hover:border-white/20 transition-colors group">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h4 className="text-lg font-semibold text-white group-hover:text-blue-400 transition-colors">{title}</h4>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-medium uppercase tracking-wider ${
+                          category === 'Urgent' ? 'bg-red-500/10 text-red-400' : 'bg-blue-500/10 text-blue-400'
+                        }`}>
+                          {category}
+                        </span>
+                      </div>
+                      <p className="text-zinc-400 line-clamp-2">{ann.content}</p>
+                      <div className="mt-4 text-xs text-zinc-500">
+                        {new Date(ann.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                      </div>
+                    </Link>
+                  );
+                }) : (
                   <div className="p-8 text-center rounded-2xl bg-zinc-900/30 border border-white/5 border-dashed">
                     <p className="text-zinc-500">No recent announcements</p>
                   </div>
@@ -168,23 +184,42 @@ export default function HomePage() {
               </div>
               
               <div className="space-y-4">
-                {events.length > 0 ? events.map((event) => (
-                  <Link key={event.id} href={`/announcements?id=${event.id}&type=event`} className="block p-5 rounded-2xl bg-zinc-900/50 border border-white/5 hover:border-white/20 transition-colors group">
-                    <div className="flex items-start gap-4">
-                      <div className="flex flex-col items-center justify-center w-12 h-12 rounded-xl bg-purple-500/10 text-purple-400 shrink-0">
-                        <span className="text-xs font-bold uppercase">{new Date(event.date).toLocaleString('default', { month: 'short' })}</span>
-                        <span className="text-lg font-bold leading-none">{new Date(event.date).getDate()}</span>
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-white group-hover:text-purple-400 transition-colors">{event.title}</h4>
-                        <div className="mt-2 flex items-center gap-1 text-xs text-zinc-500">
-                          <MapPin className="h-3 w-3" />
-                          <span className="truncate">{event.location || 'TBA'}</span>
+                {events.length > 0 ? events.map((event) => {
+                  let title = event.title;
+                  let tag = 'Upcoming';
+                  const match = title.match(/^\[(.*?)\]\s*(.*)$/);
+                  if (match) {
+                    tag = match[1];
+                    title = match[2];
+                  }
+                  return (
+                    <Link key={event.id} href={`/announcements?id=${event.id}&type=event`} className="block p-5 rounded-2xl bg-zinc-900/50 border border-white/5 hover:border-white/20 transition-colors group">
+                      <div className="flex items-start gap-4">
+                        <div className="flex flex-col items-center justify-center w-12 h-12 rounded-xl bg-purple-500/10 text-purple-400 shrink-0">
+                          <span className="text-xs font-bold uppercase">{new Date(event.date).toLocaleString('default', { month: 'short' })}</span>
+                          <span className="text-lg font-bold leading-none">{new Date(event.date).getDate()}</span>
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-semibold text-white group-hover:text-purple-400 transition-colors">{title}</h4>
+                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium uppercase tracking-wider ${
+                              tag === 'Cancelled' ? 'bg-red-500/10 text-red-400' :
+                              tag === 'Delayed' ? 'bg-orange-500/10 text-orange-400' :
+                              tag === 'Past' ? 'bg-zinc-500/10 text-zinc-400' :
+                              'bg-emerald-500/10 text-emerald-400'
+                            }`}>
+                              {tag}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1 text-xs text-zinc-500">
+                            <MapPin className="h-3 w-3" />
+                            <span className="truncate">{event.location || 'TBA'}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </Link>
-                )) : (
+                    </Link>
+                  );
+                }) : (
                   <div className="p-8 text-center rounded-2xl bg-zinc-900/30 border border-white/5 border-dashed">
                     <p className="text-zinc-500">No upcoming events</p>
                   </div>

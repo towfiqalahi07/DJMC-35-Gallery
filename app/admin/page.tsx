@@ -30,6 +30,7 @@ export default function AdminPage() {
   const [profiles, setProfiles] = useState<ProfileProps[]>([]);
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
   const [newImageUrl, setNewImageUrl] = useState('');
+  const [newImageCategory, setNewImageCategory] = useState('General');
   const [isGalleryLoading, setIsGalleryLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -120,13 +121,14 @@ export default function AdminPage() {
     
     setIsGalleryLoading(true);
     try {
+      const urlWithCategory = `${newImageUrl}#category=${encodeURIComponent(newImageCategory)}`;
       const res = await fetch('/api/admin/gallery', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'x-admin-password': password,
         },
-        body: JSON.stringify({ url: newImageUrl }),
+        body: JSON.stringify({ url: urlWithCategory }),
       });
 
       if (!res.ok) throw new Error('Failed to add image');
@@ -349,6 +351,16 @@ export default function AdminPage() {
                 className="flex-1 rounded-xl border border-white/10 bg-black/50 px-4 py-3 text-white placeholder-zinc-600 focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/20"
                 required
               />
+              <select
+                value={newImageCategory}
+                onChange={(e) => setNewImageCategory(e.target.value)}
+                className="w-full sm:w-48 rounded-xl border border-white/10 bg-black/50 px-4 py-3 text-white focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/20"
+              >
+                <option value="General">General</option>
+                <option value="Events">Events</option>
+                <option value="Memories">Memories</option>
+                <option value="Campus">Campus</option>
+              </select>
               <button
                 type="submit"
                 disabled={isGalleryLoading}

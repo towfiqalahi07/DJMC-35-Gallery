@@ -7,7 +7,8 @@ import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay';
 
 export default function AboutPage() {
-  const [galleryImages, setGalleryImages] = useState<{id: string, url: string}[]>([]);
+  const [galleryImages, setGalleryImages] = useState<{id: string, url: string, category: string}[]>([]);
+  const [activeCategory, setActiveCategory] = useState<string>('All');
   const [isLoading, setIsLoading] = useState(true);
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true }, [Autoplay({ delay: 4000, stopOnInteraction: false })]);
 
@@ -26,7 +27,15 @@ export default function AboutPage() {
         if (response.ok) {
           const data = await response.json();
           if (data.images && data.images.length > 0) {
-            setGalleryImages(data.images);
+            const parsedImages = data.images.map((img: any) => {
+              const [url, hash] = img.url.split('#category=');
+              return {
+                id: img.id,
+                url: url,
+                category: hash ? decodeURIComponent(hash) : 'General'
+              };
+            });
+            setGalleryImages(parsedImages);
           }
         }
       } catch (error) {
@@ -37,6 +46,18 @@ export default function AboutPage() {
     };
     fetchGallery();
   }, []);
+
+  const categories = ['All', ...Array.from(new Set(galleryImages.map(img => img.category)))];
+  const filteredImages = activeCategory === 'All' 
+    ? galleryImages 
+    : galleryImages.filter(img => img.category === activeCategory);
+
+  // Re-initialize carousel when filtered images change
+  useEffect(() => {
+    if (emblaApi) {
+      emblaApi.reInit();
+    }
+  }, [filteredImages, emblaApi]);
 
   return (
     <div className="min-h-screen bg-black text-zinc-300 selection:bg-zinc-800 selection:text-white flex flex-col">
@@ -108,24 +129,46 @@ export default function AboutPage() {
 
         {/* Gallery Slider */}
         <section className="pb-20 max-w-5xl mx-auto px-4">
-          <h2 className="text-3xl font-bold text-white text-center mb-10">Memories</h2>
+          <h2 className="text-3xl font-bold text-white text-center mb-6">Memories</h2>
+          
+          {galleryImages.length > 0 && (
+            <div className="flex flex-wrap justify-center gap-2 mb-8">
+              {categories.map(category => (
+                <button
+                  key={category}
+                  onClick={() => setActiveCategory(category)}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                    activeCategory === category 
+                      ? 'bg-white text-black' 
+                      : 'bg-zinc-900/80 text-zinc-400 hover:text-white border border-white/10'
+                  }`}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
+          )}
+
           <div className="space-y-8">
             {isLoading ? (
               <div className="text-center text-zinc-500 py-12 border border-white/5 rounded-3xl bg-zinc-900/30">
                 Loading gallery...
               </div>
-            ) : galleryImages.length > 0 ? (
+            ) : filteredImages.length > 0 ? (
               <div className="relative group">
                 <div className="overflow-hidden rounded-3xl border border-white/10 bg-zinc-900/50" ref={emblaRef}>
                   <div className="flex">
-                    {galleryImages.map((img) => (
+                    {filteredImages.map((img) => (
                       <div key={img.id} className="flex-[0_0_100%] min-w-0 relative aspect-video sm:aspect-[21/9]">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img 
                           src={img.url} 
-                          alt="Gallery image" 
+                          alt={`Gallery image - ${img.category}`} 
                           className="absolute inset-0 w-full h-full object-cover"
                         />
+                        <div className="absolute bottom-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full text-xs font-medium text-white border border-white/10">
+                          {img.category}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -209,9 +252,9 @@ export default function AboutPage() {
             
             <div>
               <h2 className="text-3xl font-bold text-white mb-6">Location</h2>
-              <div className="aspect-video w-full rounded-2xl overflow-hidden border border-white/10 bg-zinc-800">
+              <div className="aspect-video w-full rounded-2xl overflow-hidden border border-white/10 bg-zinc-800 mb-4">
                 <iframe 
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3596.536979601614!2d88.6322303!3d25.6534969!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39fb52914041b65f%3A0x62a5b29c99e13e1!2sM.%20Abdur%20Rahim%20Medical%20College%2C%20Dinajpur!5e0!3m2!1sen!2sbd!4v1710862000000!5m2!1sen!2sbd" 
+                  src="https://maps.google.com/maps?q=Dinajpur%20Medical%20College,%20New%20Town,%20Dinajpur,%20Bangladesh%205200&t=&z=15&ie=UTF8&iwloc=&output=embed" 
                   width="100%" 
                   height="100%" 
                   style={{ border: 0 }} 
@@ -219,6 +262,18 @@ export default function AboutPage() {
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
                 ></iframe>
+              </div>
+              <div className="bg-zinc-900/50 border border-white/5 rounded-2xl p-6 flex items-start gap-4">
+                <div className="p-3 bg-purple-500/10 rounded-xl shrink-0">
+                  <MapPin className="h-6 w-6 text-purple-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white mb-1">Address</h3>
+                  <p className="text-zinc-400">
+                    New Town, Dinajpur, Bangladesh.<br />
+                    Postal Code: 5200.
+                  </p>
+                </div>
               </div>
             </div>
           </div>

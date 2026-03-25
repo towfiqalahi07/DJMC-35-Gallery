@@ -15,13 +15,13 @@ export async function POST(req: Request) {
   if (!checkAuth(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   
   try {
-    const { url } = await req.json();
+    const { url, category } = await req.json();
     if (!url) return NextResponse.json({ error: 'URL is required' }, { status: 400 });
 
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
     const { data, error } = await supabaseAdmin
       .from('gallery_images')
-      .insert([{ url }])
+      .insert([{ url, category: category || 'General' }])
       .select();
 
     if (error) throw error;

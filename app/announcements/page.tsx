@@ -81,22 +81,38 @@ function AnnouncementsContent() {
         </div>
       ) : activeTab === 'announcements' ? (
         <div className="space-y-4">
-          {announcements.map((ann) => (
-            <div 
-              key={ann.id} 
-              onClick={() => setSelectedItem({ ...ann, type: 'announcement' })}
-              className="p-6 rounded-2xl bg-zinc-900/50 border border-white/5 cursor-pointer hover:border-white/20 transition-all"
-            >
-              <div className="flex justify-between items-start gap-4">
-                <h3 className="text-xl font-bold text-white mb-2">{ann.title}</h3>
-                {ann.attachment_url && <Paperclip className="h-5 w-5 text-zinc-500 shrink-0" />}
+          {announcements.map((ann) => {
+            let title = ann.title;
+            let category = 'General';
+            const match = title.match(/^\[(.*?)\]\s*(.*)$/);
+            if (match) {
+              category = match[1];
+              title = match[2];
+            }
+            return (
+              <div 
+                key={ann.id} 
+                onClick={() => setSelectedItem({ ...ann, type: 'announcement', parsedTitle: title, parsedCategory: category })}
+                className="p-6 rounded-2xl bg-zinc-900/50 border border-white/5 cursor-pointer hover:border-white/20 transition-all"
+              >
+                <div className="flex justify-between items-start gap-4 mb-2">
+                  <div className="flex items-center gap-3">
+                    <h3 className="text-xl font-bold text-white">{title}</h3>
+                    <span className={`px-2 py-1 rounded text-xs font-medium ${
+                      category === 'Urgent' ? 'bg-red-500/10 text-red-400' : 'bg-blue-500/10 text-blue-400'
+                    }`}>
+                      {category}
+                    </span>
+                  </div>
+                  {ann.attachment_url && <Paperclip className="h-5 w-5 text-zinc-500 shrink-0" />}
+                </div>
+                <p className="text-zinc-400 whitespace-pre-wrap line-clamp-2">{ann.content}</p>
+                <div className="mt-4 text-sm text-zinc-500">
+                  {new Date(ann.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                </div>
               </div>
-              <p className="text-zinc-400 whitespace-pre-wrap line-clamp-2">{ann.content}</p>
-              <div className="mt-4 text-sm text-zinc-500">
-                {new Date(ann.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-              </div>
-            </div>
-          ))}
+            );
+          })}
           {announcements.length === 0 && (
             <div className="p-8 text-center rounded-2xl bg-zinc-900/30 border border-white/5 border-dashed">
               <p className="text-zinc-500">No announcements found.</p>
@@ -105,37 +121,56 @@ function AnnouncementsContent() {
         </div>
       ) : (
         <div className="space-y-4">
-          {events.map((event) => (
-            <div 
-              key={event.id} 
-              onClick={() => setSelectedItem({ ...event, type: 'event' })}
-              className="p-6 rounded-2xl bg-zinc-900/50 border border-white/5 flex flex-col sm:flex-row gap-6 cursor-pointer hover:border-white/20 transition-all"
-            >
-              <div className="flex flex-col items-center justify-center w-20 h-20 rounded-2xl bg-purple-500/10 text-purple-400 shrink-0">
-                <span className="text-sm font-bold uppercase">{new Date(event.date).toLocaleString('default', { month: 'short' })}</span>
-                <span className="text-2xl font-bold leading-none">{new Date(event.date).getDate()}</span>
-              </div>
-              <div className="flex-1">
-                <div className="flex justify-between items-start gap-4">
-                  <h3 className="text-xl font-bold text-white mb-2">{event.title}</h3>
-                  {event.attachment_url && <Paperclip className="h-5 w-5 text-zinc-500 shrink-0" />}
+          {events.map((event) => {
+            let title = event.title;
+            let tag = 'Upcoming';
+            const match = title.match(/^\[(.*?)\]\s*(.*)$/);
+            if (match) {
+              tag = match[1];
+              title = match[2];
+            }
+            return (
+              <div 
+                key={event.id} 
+                onClick={() => setSelectedItem({ ...event, type: 'event', parsedTitle: title, parsedTag: tag })}
+                className="p-6 rounded-2xl bg-zinc-900/50 border border-white/5 flex flex-col sm:flex-row gap-6 cursor-pointer hover:border-white/20 transition-all"
+              >
+                <div className="flex flex-col items-center justify-center w-20 h-20 rounded-2xl bg-purple-500/10 text-purple-400 shrink-0">
+                  <span className="text-sm font-bold uppercase">{new Date(event.date).toLocaleString('default', { month: 'short' })}</span>
+                  <span className="text-2xl font-bold leading-none">{new Date(event.date).getDate()}</span>
                 </div>
-                <p className="text-zinc-400 whitespace-pre-wrap mb-4 line-clamp-2">{event.description}</p>
-                <div className="flex items-center gap-4 text-sm text-zinc-500">
-                  <div className="flex items-center gap-1">
-                    <Calendar className="h-4 w-4" />
-                    {new Date(event.date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-                  </div>
-                  {event.location && (
-                    <div className="flex items-center gap-1">
-                      <MapPin className="h-4 w-4" />
-                      {event.location}
+                <div className="flex-1">
+                  <div className="flex justify-between items-start gap-4 mb-2">
+                    <div className="flex items-center gap-3">
+                      <h3 className="text-xl font-bold text-white">{title}</h3>
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${
+                        tag === 'Cancelled' ? 'bg-red-500/10 text-red-400' :
+                        tag === 'Delayed' ? 'bg-orange-500/10 text-orange-400' :
+                        tag === 'Past' ? 'bg-zinc-500/10 text-zinc-400' :
+                        'bg-emerald-500/10 text-emerald-400'
+                      }`}>
+                        {tag}
+                      </span>
                     </div>
-                  )}
+                    {event.attachment_url && <Paperclip className="h-5 w-5 text-zinc-500 shrink-0" />}
+                  </div>
+                  <p className="text-zinc-400 whitespace-pre-wrap mb-4 line-clamp-2">{event.description}</p>
+                  <div className="flex items-center gap-4 text-sm text-zinc-500">
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-4 w-4" />
+                      {new Date(event.date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                    {event.location && (
+                      <div className="flex items-center gap-1">
+                        <MapPin className="h-4 w-4" />
+                        {event.location}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
           {events.length === 0 && (
             <div className="p-8 text-center rounded-2xl bg-zinc-900/30 border border-white/5 border-dashed">
               <p className="text-zinc-500">No upcoming events.</p>
@@ -149,7 +184,26 @@ function AnnouncementsContent() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div className="bg-zinc-900 border border-white/10 rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto flex flex-col shadow-2xl">
             <div className="sticky top-0 bg-zinc-900/90 backdrop-blur-md border-b border-white/5 p-6 flex items-start justify-between">
-              <h2 className="text-2xl font-bold text-white pr-8">{selectedItem.title}</h2>
+              <div className="flex items-center gap-3 pr-8">
+                <h2 className="text-2xl font-bold text-white">{selectedItem.parsedTitle || selectedItem.title}</h2>
+                {selectedItem.type === 'announcement' && selectedItem.parsedCategory && (
+                  <span className={`px-2 py-1 rounded text-xs font-medium ${
+                    selectedItem.parsedCategory === 'Urgent' ? 'bg-red-500/10 text-red-400' : 'bg-blue-500/10 text-blue-400'
+                  }`}>
+                    {selectedItem.parsedCategory}
+                  </span>
+                )}
+                {selectedItem.type === 'event' && selectedItem.parsedTag && (
+                  <span className={`px-2 py-1 rounded text-xs font-medium ${
+                    selectedItem.parsedTag === 'Cancelled' ? 'bg-red-500/10 text-red-400' :
+                    selectedItem.parsedTag === 'Delayed' ? 'bg-orange-500/10 text-orange-400' :
+                    selectedItem.parsedTag === 'Past' ? 'bg-zinc-500/10 text-zinc-400' :
+                    'bg-emerald-500/10 text-emerald-400'
+                  }`}>
+                    {selectedItem.parsedTag}
+                  </span>
+                )}
+              </div>
               <button 
                 onClick={closeModal}
                 className="p-2 rounded-full bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-colors absolute right-6 top-6"

@@ -83,10 +83,10 @@ export default function Header() {
           ) : (
             <button
               onClick={handleSignIn}
-              className="hidden md:inline-flex items-center justify-center gap-1.5 md:gap-2 rounded-full bg-white px-3 py-1.5 md:px-4 md:py-2 text-sm font-medium text-black transition-transform hover:scale-105 active:scale-95"
+              className="inline-flex items-center justify-center gap-1.5 md:gap-2 rounded-full bg-white/10 hover:bg-white/20 px-3 py-1.5 md:px-4 md:py-2 text-sm font-medium text-white transition-colors"
             >
               <LogIn className="h-4 w-4" />
-              <span className="text-xs sm:text-sm font-bold">Sign In</span>
+              <span className="text-xs sm:text-sm font-medium">Sign In</span>
             </button>
           )}
 
@@ -111,29 +111,7 @@ export default function Header() {
                 {link.name}
               </Link>
             ))}
-            {!user && (
-              <button
-                onClick={handleSignIn}
-                className="mt-4 w-full flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-base font-bold text-black transition-transform hover:scale-105 active:scale-95"
-              >
-                <LogIn className="h-5 w-5" />
-                Sign In
-              </button>
-            )}
           </div>
-        </div>
-      )}
-
-      {/* Fixed Mobile Sign In Button (Bottom) */}
-      {!user && (
-        <div className="md:hidden fixed bottom-4 left-4 right-4 z-50">
-          <button
-            onClick={handleSignIn}
-            className="w-full flex items-center justify-center gap-2 rounded-full bg-white px-6 py-4 text-base font-bold text-black shadow-[0_0_40px_rgba(255,255,255,0.2)] transition-transform hover:scale-105 active:scale-95"
-          >
-            <LogIn className="h-5 w-5" />
-            Sign In to Access Profile
-          </button>
         </div>
       )}
     </header>

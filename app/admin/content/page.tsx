@@ -77,9 +77,9 @@ export default function AdminContentPage() {
   const handleCreateNew = () => {
     setEditingItem(null);
     if (activeTab === 'announcements') {
-      setFormData({ title: '', content: '', attachment_url: '', is_marquee: false });
+      setFormData({ title: '', content: '', attachment_url: '', is_marquee: false, category: 'General' });
     } else if (activeTab === 'events') {
-      setFormData({ title: '', description: '', date: new Date().toISOString().slice(0, 16), location: '', attachment_url: '' });
+      setFormData({ title: '', description: '', date: new Date().toISOString().slice(0, 16), location: '', attachment_url: '', tag: 'Upcoming' });
     } else if (activeTab === 'resources') {
       setFormData({ title: '', description: '', category: 'Books', url: '' });
     }
@@ -88,11 +88,33 @@ export default function AdminContentPage() {
 
   const handleEdit = (item: any) => {
     setEditingItem(item);
-    if (activeTab === 'events' && item.date) {
-      setFormData({ ...item, date: new Date(item.date).toISOString().slice(0, 16) });
+    
+    let parsedTitle = item.title;
+    let parsedCategory = 'General';
+    let parsedTag = 'Upcoming';
+
+    if (activeTab === 'announcements') {
+      const match = parsedTitle.match(/^\[(.*?)\]\s*(.*)$/);
+      if (match) {
+        parsedCategory = match[1];
+        parsedTitle = match[2];
+      }
+      setFormData({ ...item, title: parsedTitle, category: parsedCategory });
+    } else if (activeTab === 'events') {
+      const match = parsedTitle.match(/^\[(.*?)\]\s*(.*)$/);
+      if (match) {
+        parsedTag = match[1];
+        parsedTitle = match[2];
+      }
+      if (item.date) {
+        setFormData({ ...item, title: parsedTitle, tag: parsedTag, date: new Date(item.date).toISOString().slice(0, 16) });
+      } else {
+        setFormData({ ...item, title: parsedTitle, tag: parsedTag });
+      }
     } else {
       setFormData({ ...item });
     }
+    
     setIsCreating(true);
   };
 
@@ -128,8 +150,15 @@ export default function AdminContentPage() {
       const method = editingItem ? 'PUT' : 'POST';
       const payload = { ...formData };
       
-      if (activeTab === 'events' && payload.date) {
-        payload.date = new Date(payload.date).toISOString();
+      if (activeTab === 'announcements') {
+        payload.title = `[${payload.category || 'General'}] ${payload.title}`;
+        delete payload.category;
+      } else if (activeTab === 'events') {
+        payload.title = `[${payload.tag || 'Upcoming'}] ${payload.title}`;
+        delete payload.tag;
+        if (payload.date) {
+          payload.date = new Date(payload.date).toISOString();
+        }
       }
 
       const body = editingItem 
@@ -264,15 +293,45 @@ export default function AdminContentPage() {
             </div>
             
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-zinc-400 mb-2">Title</label>
-                <input
-                  type="text"
-                  value={formData.title || ''}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full rounded-xl border border-white/10 bg-zinc-900 py-3 px-4 text-white focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/20"
-                  required
-                />
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="md:col-span-3">
+                  <label className="block text-sm font-medium text-zinc-400 mb-2">Title</label>
+                  <input
+                    type="text"
+                    value={formData.title || ''}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    className="w-full rounded-xl border border-white/10 bg-zinc-900 py-3 px-4 text-white focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/20"
+                    required
+                  />
+                </div>
+                {activeTab === 'announcements' && (
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-400 mb-2">Category</label>
+                    <select
+                      value={formData.category || 'General'}
+                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                      className="w-full rounded-xl border border-white/10 bg-zinc-900 py-3 px-4 text-white focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/20"
+                    >
+                      <option value="General">General</option>
+                      <option value="Urgent">Urgent</option>
+                    </select>
+                  </div>
+                )}
+                {activeTab === 'events' && (
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-400 mb-2">Tag</label>
+                    <select
+                      value={formData.tag || 'Upcoming'}
+                      onChange={(e) => setFormData({ ...formData, tag: e.target.value })}
+                      className="w-full rounded-xl border border-white/10 bg-zinc-900 py-3 px-4 text-white focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/20"
+                    >
+                      <option value="Upcoming">Upcoming</option>
+                      <option value="Delayed">Delayed</option>
+                      <option value="Past">Past</option>
+                      <option value="Cancelled">Cancelled</option>
+                    </select>
+                  </div>
+                )}
               </div>
 
               {activeTab === 'announcements' && (
