@@ -199,9 +199,13 @@ export default function AdminContentPage() {
         body: JSON.stringify(body),
       });
 
-      if (!res.ok) throw new Error('Failed to save');
+      const responseData = await res.json();
 
-      const { data: savedItem } = await res.json();
+      if (!res.ok) {
+        throw new Error(responseData.error || 'Failed to save');
+      }
+
+      const savedItem = responseData.data;
       
       if (editingItem) {
         setData(data.map(item => item.id === editingItem.id ? savedItem : item));
