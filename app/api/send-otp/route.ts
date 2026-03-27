@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
 
-export const runtime = 'edge';
-
 function formatPhoneNumber(phone: string): string | null {
   // Remove all non-numeric characters
   const cleaned = phone.replace(/\D/g, '');

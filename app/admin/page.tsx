@@ -441,9 +441,9 @@ export default function AdminPage() {
               <h3 className="font-bold text-white group-hover:text-blue-400">Content Management</h3>
               <p className="text-sm text-zinc-400 mt-1">Add, edit, and delete announcements, events, and resources.</p>
             </a>
-            <a href="/admin/pr" className="p-6 rounded-2xl bg-zinc-900/50 border border-white/5 hover:border-white/20 transition-colors group">
-              <h3 className="font-bold text-white group-hover:text-blue-400">Manage PR</h3>
-              <p className="text-sm text-zinc-400 mt-1">Create, edit, publish, and close polls and info requests.</p>
+            <a href="/admin/polls" className="p-6 rounded-2xl bg-zinc-900/50 border border-white/5 hover:border-white/20 transition-colors group">
+              <h3 className="font-bold text-white group-hover:text-blue-400">Manage Polls</h3>
+              <p className="text-sm text-zinc-400 mt-1">Create, edit, publish, and close polls for the batch to vote on.</p>
             </a>
             <div className="p-6 rounded-2xl bg-zinc-900/50 border border-white/5">
               <h3 className="font-bold text-white">Marquee Notice</h3>

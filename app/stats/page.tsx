@@ -95,7 +95,7 @@ export default function StatsPage() {
   });
 
   return (
-    <div className="flex-1 bg-black text-zinc-300 selection:bg-zinc-800 selection:text-white flex flex-col">
+    <div className="min-h-screen bg-black text-zinc-300 selection:bg-zinc-800 selection:text-white flex flex-col">
       <header className="sticky top-0 z-50 border-b border-white/5 bg-black/50 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-7xl items-center px-4 sm:px-6 lg:px-8">
           <Link href="/" className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors">

@@ -3,7 +3,7 @@
 import Header from '@/components/Header';
 import { useState, useEffect, Suspense } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Bell, Calendar, MapPin, Loader2, X, Paperclip, Pin } from 'lucide-react';
+import { Bell, Calendar, MapPin, Loader2, X, Paperclip } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 
 function AnnouncementsContent() {
@@ -21,11 +21,7 @@ function AnnouncementsContent() {
   useEffect(() => {
     async function fetchData() {
       setIsLoading(true);
-      const { data: annData } = await supabase
-        .from('announcements')
-        .select('*')
-        .order('is_pinned', { ascending: false, nullsFirst: false })
-        .order('date', { ascending: false });
+      const { data: annData } = await supabase.from('announcements').select('*').order('date', { ascending: false });
       if (annData) {
         setAnnouncements(annData);
         if (initialId && initialType === 'announcement') {
@@ -101,7 +97,6 @@ function AnnouncementsContent() {
               >
                 <div className="flex justify-between items-start gap-4 mb-2">
                   <div className="flex items-center gap-3">
-                    {ann.is_pinned && <Pin className="h-5 w-5 text-blue-400 fill-blue-400/20" />}
                     <h3 className="text-xl font-bold text-white">{title}</h3>
                     <span className={`px-2 py-1 rounded text-xs font-medium ${
                       category === 'Urgent' ? 'bg-red-500/10 text-red-400' : 'bg-blue-500/10 text-blue-400'
@@ -190,7 +185,6 @@ function AnnouncementsContent() {
           <div className="bg-zinc-900 border border-white/10 rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto flex flex-col shadow-2xl">
             <div className="sticky top-0 bg-zinc-900/90 backdrop-blur-md border-b border-white/5 p-6 flex items-start justify-between">
               <div className="flex items-center gap-3 pr-8">
-                {selectedItem.type === 'announcement' && selectedItem.is_pinned && <Pin className="h-5 w-5 text-blue-400 fill-blue-400/20" />}
                 <h2 className="text-2xl font-bold text-white">{selectedItem.parsedTitle || selectedItem.title}</h2>
                 {selectedItem.type === 'announcement' && selectedItem.parsedCategory && (
                   <span className={`px-2 py-1 rounded text-xs font-medium ${
@@ -276,7 +270,7 @@ function AnnouncementsContent() {
 
 export default function AnnouncementsPage() {
   return (
-    <div className="flex-1 bg-black text-zinc-300 selection:bg-zinc-800 selection:text-white flex flex-col relative">
+    <div className="min-h-screen bg-black text-zinc-300 selection:bg-zinc-800 selection:text-white flex flex-col relative">
       <Header />
       <Suspense fallback={
         <div className="flex-1 flex items-center justify-center">

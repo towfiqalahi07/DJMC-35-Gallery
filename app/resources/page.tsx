@@ -31,7 +31,7 @@ export default function ResourcesPage() {
   });
 
   return (
-    <div className="flex-1 bg-black text-zinc-300 selection:bg-zinc-800 selection:text-white flex flex-col">
+    <div className="min-h-screen bg-black text-zinc-300 selection:bg-zinc-800 selection:text-white flex flex-col">
       <Header />
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-12">
@@ -95,9 +95,6 @@ export default function ResourcesPage() {
                   <LinkIcon className="h-5 w-5 text-zinc-500 group-hover:text-emerald-400 transition-colors" />
                 </div>
                 <h3 className="text-xl font-bold text-white mb-2 group-hover:text-emerald-400 transition-colors">{res.title}</h3>
-                {res.author && (
-                  <p className="text-sm font-medium text-emerald-400/80 mb-2">By {res.author}</p>
-                )}
                 {res.description && (
                   <p className="text-sm text-zinc-400 line-clamp-3 mt-auto">{res.description}</p>
                 )}
