@@ -1,10 +1,7 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 
 export const runtime = 'edge';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 export async function GET(req: Request) {
   try {
@@ -15,8 +12,6 @@ export async function GET(req: Request) {
     if (adminPassword !== expectedPassword) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     const { data: requests, error: requestsError } = await supabaseAdmin
       .from('info_requests')
@@ -51,8 +46,6 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { title, description, field_type, target_column, options, is_active } = body;
 
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-
     const { data, error } = await supabaseAdmin
       .from('info_requests')
       .insert([{ title, description, field_type, target_column, options, is_active }])
@@ -79,8 +72,6 @@ export async function PUT(req: Request) {
 
     const body = await req.json();
     const { id, title, description, field_type, target_column, options, is_active } = body;
-
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     const { data, error } = await supabaseAdmin
       .from('info_requests')
@@ -111,8 +102,6 @@ export async function DELETE(req: Request) {
     const id = searchParams.get('id');
 
     if (!id) return NextResponse.json({ error: 'Missing ID' }, { status: 400 });
-
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     const { error } = await supabaseAdmin
       .from('info_requests')

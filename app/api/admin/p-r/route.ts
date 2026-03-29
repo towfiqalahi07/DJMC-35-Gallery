@@ -1,10 +1,7 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 
 export const runtime = 'edge';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 export async function GET(req: Request) {
   try {
@@ -15,12 +12,6 @@ export async function GET(req: Request) {
     if (adminPassword !== expectedPassword) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    if (!supabaseUrl || !supabaseServiceKey) {
-      return NextResponse.json({ error: 'Supabase service role key not configured' }, { status: 500 });
-    }
-
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     const { data: polls, error: pollsError } = await supabaseAdmin
       .from('polls')
@@ -54,8 +45,6 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { title, description, options, is_published, is_open } = body;
 
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-
     const { data, error } = await supabaseAdmin
       .from('polls')
       .insert([{ title, description, options, is_published, is_open }])
@@ -82,8 +71,6 @@ export async function PUT(req: Request) {
 
     const body = await req.json();
     const { id, title, description, options, is_published, is_open } = body;
-
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     const { data, error } = await supabaseAdmin
       .from('polls')
@@ -114,8 +101,6 @@ export async function DELETE(req: Request) {
     const id = searchParams.get('id');
 
     if (!id) return NextResponse.json({ error: 'Missing ID' }, { status: 400 });
-
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     // Also delete associated votes
     await supabaseAdmin.from('votes').delete().eq('poll_id', id);

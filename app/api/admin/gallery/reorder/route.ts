@@ -1,10 +1,7 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 
 export const runtime = 'edge';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 const checkAuth = (req: Request) => {
   const adminPassword = req.headers.get('x-admin-password')?.trim();
@@ -22,8 +19,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'orderedIds array is required' }, { status: 400 });
     }
 
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-    
     // Update created_at to reorder items. We'll use the current time and subtract milliseconds based on the index
     // so that the first item has the oldest timestamp (or newest, depending on how it's sorted).
     // The gallery route sorts by created_at ascending.
