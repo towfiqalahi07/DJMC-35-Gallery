@@ -201,7 +201,7 @@ export default function PollsPage() {
       }
 
       // Update local state
-      setCollectedInfo(prev => ({
+      setCollectedInfo((prev: any) => ({
         ...prev,
         [activeRequest.target_column]: inputValue
       }));
