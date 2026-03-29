@@ -6,17 +6,19 @@ export const runtime = 'edge';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
     const { data, error } = await supabase
-      .from('gallery_images')
+      .from('info_requests')
       .select('*')
-      .order('created_at', { ascending: true });
+      .eq('is_active', true)
+      .order('created_at', { ascending: false });
 
     if (error) throw error;
 
-    return NextResponse.json({ images: data });
+    return NextResponse.json({ infoRequests: data });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

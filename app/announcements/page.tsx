@@ -1,6 +1,5 @@
 'use client';
 
-import Header from '@/components/Header';
 import { useState, useEffect, Suspense } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Bell, Calendar, MapPin, Loader2, X, Paperclip } from 'lucide-react';
@@ -270,8 +269,7 @@ function AnnouncementsContent() {
 
 export default function AnnouncementsPage() {
   return (
-    <div className="min-h-screen bg-black text-zinc-300 selection:bg-zinc-800 selection:text-white flex flex-col relative">
-      <Header />
+    <>
       <Suspense fallback={
         <div className="flex-1 flex items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-zinc-500" />
@@ -279,6 +277,6 @@ export default function AnnouncementsPage() {
       }>
         <AnnouncementsContent />
       </Suspense>
-    </div>
+    </>
   );
 }

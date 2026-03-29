@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { Users, Calendar, MapPin, ArrowRight, BookOpen, Bell, GraduationCap, Link as LinkIcon, LogIn } from 'lucide-react';
-import Header from '@/components/Header';
 import Marquee from '@/components/Marquee';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -53,8 +52,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-zinc-300 selection:bg-zinc-800 selection:text-white flex flex-col">
-      <Header />
+    <>
       <Marquee />
 
       <main className="flex-1">
@@ -73,7 +71,7 @@ export default function HomePage() {
             </h1>
             <div className="flex flex-col items-center gap-2">
               <h2 className="text-3xl md:text-5xl font-bold text-blue-400">DjMC 35</h2>
-              <h2 className="text-4xl md:text-6xl font-bold text-blue-400 font-bengali mt-2">প্রত্যুষ্মান ৩৫</h2>
+              <h2 className="text-4xl md:text-6xl font-bold text-blue-400 font-bengali mt-2" suppressHydrationWarning>প্রত্যুষ্মান ৩৫</h2>
             </div>
 
             {!user && (
@@ -260,6 +258,6 @@ export default function HomePage() {
           </div>
         </section>
       </main>
-    </div>
+    </>
   );
 }

@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Loader2, Plus, Edit, Trash2, ShieldAlert, Bell, Calendar, BookOpen, X } from 'lucide-react';
-import Header from '@/components/Header';
+import { Loader2, Plus, Edit, Trash2, ShieldAlert, Bell, Calendar, BookOpen, X, CheckCircle, XCircle } from 'lucide-react';
 
 type ContentType = 'announcements' | 'events' | 'resources';
 
@@ -13,6 +12,8 @@ export default function AdminContentPage() {
   const [data, setData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; type: ContentType } | null>(null);
   
   const [isCreating, setIsCreating] = useState(false);
   const [editingItem, setEditingItem] = useState<any | null>(null);
@@ -58,7 +59,7 @@ export default function AdminContentPage() {
       setData(data || []);
     } catch (err: any) {
       console.error(err);
-      alert(err.message);
+      setMessage({ type: 'error', text: err.message });
     } finally {
       setIsLoading(false);
     }
@@ -119,8 +120,6 @@ export default function AdminContentPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this item?')) return;
-    
     setIsLoading(true);
     try {
       const res = await fetch('/api/admin/content', {
@@ -135,10 +134,13 @@ export default function AdminContentPage() {
       if (!res.ok) throw new Error('Failed to delete');
       
       setData(data.filter(item => item.id !== id));
+      setMessage({ type: 'success', text: 'Item deleted successfully!' });
+      setTimeout(() => setMessage(null), 3000);
     } catch (err: any) {
-      alert(err.message);
+      setMessage({ type: 'error', text: err.message });
     } finally {
       setIsLoading(false);
+      setConfirmDelete(null);
     }
   };
 
@@ -187,8 +189,10 @@ export default function AdminContentPage() {
       setIsCreating(false);
       setEditingItem(null);
       setFormData({});
+      setMessage({ type: 'success', text: editingItem ? 'Updated successfully!' : 'Created successfully!' });
+      setTimeout(() => setMessage(null), 3000);
     } catch (err: any) {
-      alert(err.message);
+      setMessage({ type: 'error', text: err.message });
     } finally {
       setIsLoading(false);
     }
@@ -230,8 +234,46 @@ export default function AdminContentPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-zinc-300 flex flex-col">
-      <Header />
+    <div className="min-h-screen bg-black text-zinc-300 flex flex-col relative">
+      {message && (
+        <div className={`fixed top-8 left-1/2 -translate-x-1/2 z-[60] px-6 py-3 rounded-2xl border flex items-center gap-3 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300 ${
+          message.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-red-500/10 border-red-500/20 text-red-400'
+        }`}>
+          {message.type === 'success' ? <CheckCircle className="h-5 w-5" /> : <ShieldAlert className="h-5 w-5" />}
+          <span className="font-medium">{message.text}</span>
+          <button onClick={() => setMessage(null)} className="ml-2 hover:opacity-70">
+            <XCircle className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
+      {confirmDelete && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-zinc-900 border border-white/10 rounded-3xl p-8 w-full max-w-sm shadow-2xl text-center">
+            <div className="h-16 w-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Trash2 className="h-8 w-8 text-red-500" />
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-2">Are you sure?</h2>
+            <p className="text-zinc-400 mb-8">
+              This action cannot be undone. This item will be permanently removed from {confirmDelete.type}.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmDelete(null)}
+                className="flex-1 px-6 py-3 rounded-xl bg-zinc-800 text-white font-bold hover:bg-zinc-700 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDelete(confirmDelete.id)}
+                className="flex-1 px-6 py-3 rounded-xl bg-red-600 text-white font-bold hover:bg-red-500 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       
       <main className="flex-1 max-w-5xl mx-auto w-full p-4 sm:p-8">
         <div className="flex items-center justify-between mb-8">
@@ -510,7 +552,7 @@ export default function AdminContentPage() {
                       <Edit className="h-4 w-4" />
                     </button>
                     <button
-                      onClick={() => handleDelete(item.id)}
+                      onClick={() => setConfirmDelete({ id: item.id, type: activeTab })}
                       className="p-2 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors"
                       title="Delete"
                     >

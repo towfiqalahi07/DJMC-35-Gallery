@@ -34,6 +34,8 @@ export default function AdminPage() {
   const [isGalleryLoading, setIsGalleryLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; type: 'profile' | 'image' | 'bulk' } | null>(null);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
 
   const fetchGallery = async () => {
@@ -89,14 +91,15 @@ export default function AdminPage() {
       if (!res.ok) throw new Error('Failed to approve');
 
       setProfiles(profiles.filter(p => p.id !== id));
+      setMessage({ type: 'success', text: 'Profile approved successfully!' });
+      setTimeout(() => setMessage(null), 3000);
     } catch (err: any) {
-      alert(err.message);
+      setMessage({ type: 'error', text: err.message });
     }
   };
 
   const handleReject = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this profile?')) return;
-    
+    setIsLoading(true);
     try {
       const res = await fetch('/api/admin/reject', {
         method: 'POST',
@@ -110,8 +113,13 @@ export default function AdminPage() {
       if (!res.ok) throw new Error('Failed to reject');
 
       setProfiles(profiles.filter(p => p.id !== id));
+      setMessage({ type: 'success', text: 'Profile rejected and deleted.' });
+      setTimeout(() => setMessage(null), 3000);
     } catch (err: any) {
-      alert(err.message);
+      setMessage({ type: 'error', text: err.message });
+    } finally {
+      setIsLoading(false);
+      setConfirmDelete(null);
     }
   };
 
@@ -136,16 +144,17 @@ export default function AdminPage() {
       const data = await res.json();
       setGalleryImages([...galleryImages, data.image]);
       setNewImageUrl('');
+      setMessage({ type: 'success', text: 'Image added to gallery!' });
+      setTimeout(() => setMessage(null), 3000);
     } catch (err: any) {
-      alert(err.message);
+      setMessage({ type: 'error', text: err.message });
     } finally {
       setIsGalleryLoading(false);
     }
   };
 
   const handleDeleteGalleryImage = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this image?')) return;
-    
+    setIsGalleryLoading(true);
     try {
       const res = await fetch('/api/admin/gallery', {
         method: 'DELETE',
@@ -160,8 +169,13 @@ export default function AdminPage() {
 
       setGalleryImages(galleryImages.filter(img => img.id !== id));
       setSelectedImages(selectedImages.filter(selectedId => selectedId !== id));
+      setMessage({ type: 'success', text: 'Image deleted!' });
+      setTimeout(() => setMessage(null), 3000);
     } catch (err: any) {
-      alert(err.message);
+      setMessage({ type: 'error', text: err.message });
+    } finally {
+      setIsGalleryLoading(false);
+      setConfirmDelete(null);
     }
   };
 
@@ -173,7 +187,6 @@ export default function AdminPage() {
 
   const handleBulkDelete = async () => {
     if (selectedImages.length === 0) return;
-    if (!confirm(`Are you sure you want to delete ${selectedImages.length} images?`)) return;
 
     setIsGalleryLoading(true);
     try {
@@ -190,10 +203,13 @@ export default function AdminPage() {
 
       setGalleryImages(galleryImages.filter(img => !selectedImages.includes(img.id)));
       setSelectedImages([]);
+      setMessage({ type: 'success', text: 'Selected images deleted!' });
+      setTimeout(() => setMessage(null), 3000);
     } catch (err: any) {
-      alert(err.message);
+      setMessage({ type: 'error', text: err.message });
     } finally {
       setIsGalleryLoading(false);
+      setConfirmDelete(null);
     }
   };
 
@@ -256,7 +272,51 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-zinc-300 p-4 sm:p-8">
+    <div className="p-4 sm:p-8 relative">
+      {message && (
+        <div className={`fixed top-8 left-1/2 -translate-x-1/2 z-[60] px-6 py-3 rounded-2xl border flex items-center gap-3 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300 ${
+          message.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-red-500/10 border-red-500/20 text-red-400'
+        }`}>
+          {message.type === 'success' ? <CheckCircle className="h-5 w-5" /> : <ShieldAlert className="h-5 w-5" />}
+          <span className="font-medium">{message.text}</span>
+          <button onClick={() => setMessage(null)} className="ml-2 hover:opacity-70">
+            <XCircle className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
+      {confirmDelete && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-zinc-900 border border-white/10 rounded-3xl p-8 w-full max-w-sm shadow-2xl text-center">
+            <div className="h-16 w-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Trash2 className="h-8 w-8 text-red-500" />
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-2">Are you sure?</h2>
+            <p className="text-zinc-400 mb-8">
+              This action cannot be undone. {confirmDelete.type === 'bulk' ? `Deleting ${selectedImages.length} items.` : 'This item will be permanently removed.'}
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmDelete(null)}
+                className="flex-1 px-6 py-3 rounded-xl bg-zinc-800 text-white font-bold hover:bg-zinc-700 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  if (confirmDelete.type === 'profile') handleReject(confirmDelete.id);
+                  else if (confirmDelete.type === 'image') handleDeleteGalleryImage(confirmDelete.id);
+                  else if (confirmDelete.type === 'bulk') handleBulkDelete();
+                }}
+                className="flex-1 px-6 py-3 rounded-xl bg-red-600 text-white font-bold hover:bg-red-500 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-5xl mx-auto space-y-8">
         <div className="flex items-center justify-between">
           <div>
@@ -294,7 +354,7 @@ export default function AdminPage() {
 
                 <div className="flex w-full sm:w-auto gap-3 pt-4 sm:pt-0 border-t border-white/5 sm:border-t-0">
                   <button
-                    onClick={() => handleReject(profile.id)}
+                    onClick={() => setConfirmDelete({ id: profile.id, type: 'profile' })}
                     className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors font-medium text-sm"
                   >
                     <XCircle className="h-4 w-4" /> Reject
@@ -331,7 +391,7 @@ export default function AdminPage() {
               )}
               {selectedImages.length > 0 && (
                 <button
-                  onClick={handleBulkDelete}
+                  onClick={() => setConfirmDelete({ id: 'bulk', type: 'bulk' })}
                   disabled={isGalleryLoading}
                   className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors font-medium text-sm"
                 >
@@ -405,7 +465,7 @@ export default function AdminPage() {
                                   <GripVertical className="h-5 w-5" />
                                 </div>
                                 <button
-                                  onClick={() => handleDeleteGalleryImage(img.id)}
+                                  onClick={() => setConfirmDelete({ id: img.id, type: 'image' })}
                                   className="h-10 w-10 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors"
                                   title="Delete image"
                                 >
@@ -441,8 +501,8 @@ export default function AdminPage() {
               <h3 className="font-bold text-white group-hover:text-blue-400">Content Management</h3>
               <p className="text-sm text-zinc-400 mt-1">Add, edit, and delete announcements, events, and resources.</p>
             </a>
-            <a href="/admin/polls" className="p-6 rounded-2xl bg-zinc-900/50 border border-white/5 hover:border-white/20 transition-colors group">
-              <h3 className="font-bold text-white group-hover:text-blue-400">Manage Polls</h3>
+            <a href="/admin/p-r" className="p-6 rounded-2xl bg-zinc-900/50 border border-white/5 hover:border-white/20 transition-colors group">
+              <h3 className="font-bold text-white group-hover:text-blue-400">Manage P&R</h3>
               <p className="text-sm text-zinc-400 mt-1">Create, edit, publish, and close polls for the batch to vote on.</p>
             </a>
             <div className="p-6 rounded-2xl bg-zinc-900/50 border border-white/5">

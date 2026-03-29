@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { getDivision, divisionToDistricts } from '@/lib/bangladesh';
-import Header from '@/components/Header';
 
 interface ProfileProps {
   id: string;
@@ -77,9 +76,7 @@ export default function DirectoryPage() {
   const uniqueDivisions = Object.keys(divisionToDistricts).sort();
 
   return (
-    <div className="min-h-screen bg-black text-zinc-300 selection:bg-zinc-800 selection:text-white flex flex-col">
-      <Header />
-
+    <>
       {/* Main Content */}
       <main className="flex-1 mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="mb-12 text-center md:text-left">
@@ -144,6 +141,6 @@ export default function DirectoryPage() {
           </div>
         )}
       </main>
-    </div>
+    </>
   );
 }

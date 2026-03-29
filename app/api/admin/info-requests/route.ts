@@ -23,13 +23,13 @@ export async function GET(req: Request) {
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     const { data, error } = await supabaseAdmin
-      .from('polls')
+      .from('info_requests')
       .select('*')
       .order('created_at', { ascending: false });
 
     if (error) throw error;
 
-    return NextResponse.json({ polls: data });
+    return NextResponse.json({ infoRequests: data });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -46,19 +46,19 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { title, description, options, is_published, is_open } = body;
+    const { title, description, fields, is_published, is_open } = body;
 
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     const { data, error } = await supabaseAdmin
-      .from('polls')
-      .insert([{ title, description, options, is_published, is_open }])
+      .from('info_requests')
+      .insert([{ title, description, fields, is_published, is_open }])
       .select()
       .single();
 
     if (error) throw error;
 
-    return NextResponse.json({ poll: data });
+    return NextResponse.json({ infoRequest: data });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -75,20 +75,20 @@ export async function PUT(req: Request) {
     }
 
     const body = await req.json();
-    const { id, title, description, options, is_published, is_open } = body;
+    const { id, title, description, fields, is_published, is_open } = body;
 
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     const { data, error } = await supabaseAdmin
-      .from('polls')
-      .update({ title, description, options, is_published, is_open })
+      .from('info_requests')
+      .update({ title, description, fields, is_published, is_open })
       .eq('id', id)
       .select()
       .single();
 
     if (error) throw error;
 
-    return NextResponse.json({ poll: data });
+    return NextResponse.json({ infoRequest: data });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

@@ -1,6 +1,5 @@
 'use client';
 
-import Header from '@/components/Header';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { User, Mail, Phone, Loader2, CheckCircle2, AlertCircle, Edit2, X, Globe } from 'lucide-react';
@@ -281,9 +280,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-zinc-300 selection:bg-zinc-800 selection:text-white flex flex-col">
-      <Header />
-
+    <>
       <main className="flex-1 max-w-3xl mx-auto w-full px-4 py-12">
         <div className="mb-8 flex items-center gap-6">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -644,6 +641,6 @@ export default function ProfilePage() {
           </form>
         )}
       </main>
-    </div>
+    </>
   );
 }

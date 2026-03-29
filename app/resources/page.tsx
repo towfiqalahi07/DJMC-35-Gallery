@@ -1,6 +1,5 @@
 'use client';
 
-import Header from '@/components/Header';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { BookOpen, Search, Loader2, Link as LinkIcon } from 'lucide-react';
@@ -31,9 +30,7 @@ export default function ResourcesPage() {
   });
 
   return (
-    <div className="min-h-screen bg-black text-zinc-300 selection:bg-zinc-800 selection:text-white flex flex-col">
-      <Header />
-
+    <>
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-12">
         <div className="mb-12 text-center md:text-left">
           <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl flex items-center gap-4 justify-center md:justify-start">
@@ -113,6 +110,6 @@ export default function ResourcesPage() {
           </div>
         )}
       </main>
-    </div>
+    </>
   );
 }

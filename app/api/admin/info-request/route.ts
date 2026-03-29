@@ -1,7 +1,7 @@
-export const runtime = 'edge';
-
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+
+export const runtime = 'edge';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -16,20 +16,23 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (!supabaseUrl || !supabaseServiceKey) {
-      return NextResponse.json({ error: 'Supabase service role key not configured' }, { status: 500 });
-    }
-
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { data, error } = await supabaseAdmin
-      .from('polls')
+    const { data: requests, error: requestsError } = await supabaseAdmin
+      .from('info_requests')
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (error) throw error;
+    if (requestsError) throw requestsError;
 
-    return NextResponse.json({ polls: data });
+    const { data: submissions, error: submissionsError } = await supabaseAdmin
+      .from('collected_info')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (submissionsError) throw submissionsError;
+
+    return NextResponse.json({ requests, submissions });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -46,19 +49,19 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { title, description, options, is_published, is_open } = body;
+    const { title, description, field_type, target_column, options, is_active } = body;
 
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     const { data, error } = await supabaseAdmin
-      .from('polls')
-      .insert([{ title, description, options, is_published, is_open }])
+      .from('info_requests')
+      .insert([{ title, description, field_type, target_column, options, is_active }])
       .select()
       .single();
 
     if (error) throw error;
 
-    return NextResponse.json({ poll: data });
+    return NextResponse.json({ request: data });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -75,20 +78,50 @@ export async function PUT(req: Request) {
     }
 
     const body = await req.json();
-    const { id, title, description, options, is_published, is_open } = body;
+    const { id, title, description, field_type, target_column, options, is_active } = body;
 
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     const { data, error } = await supabaseAdmin
-      .from('polls')
-      .update({ title, description, options, is_published, is_open })
+      .from('info_requests')
+      .update({ title, description, field_type, target_column, options, is_active })
       .eq('id', id)
       .select()
       .single();
 
     if (error) throw error;
 
-    return NextResponse.json({ poll: data });
+    return NextResponse.json({ request: data });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: Request) {
+  try {
+    const adminPassword = req.headers.get('x-admin-password')?.trim();
+    let expectedPassword = process.env.ADMIN_PASSWORD || 'djmc35admin';
+    expectedPassword = expectedPassword.replace(/^["']|["']$/g, '').trim();
+
+    if (adminPassword !== expectedPassword) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+
+    if (!id) return NextResponse.json({ error: 'Missing ID' }, { status: 400 });
+
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+
+    const { error } = await supabaseAdmin
+      .from('info_requests')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+
+    return NextResponse.json({ success: true });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
