@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS public.polls (
     options JSONB NOT NULL, -- Array of objects: [{ id: '1', text: 'Option 1' }, { id: '2', text: 'Option 2' }]
     is_published BOOLEAN DEFAULT false,
     is_open BOOLEAN DEFAULT true,
+    show_results BOOLEAN DEFAULT false,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     created_by UUID REFERENCES auth.users(id)
 );

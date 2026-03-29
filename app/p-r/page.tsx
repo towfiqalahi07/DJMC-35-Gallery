@@ -18,6 +18,7 @@ interface Poll {
   options: PollOption[];
   is_published: boolean;
   is_open: boolean;
+  show_results: boolean;
   created_at: string;
 }
 
@@ -392,7 +393,7 @@ export default function PollsPage() {
                                       : 'border-white/10 bg-zinc-900 hover:border-white/20 hover:bg-zinc-800'
                                   } ${!poll.is_open ? 'cursor-default opacity-80' : ''}`}
                                 >
-                                  {(hasVoted || !poll.is_open) && (
+                                  {(hasVoted || !poll.is_open) && poll.show_results && (
                                     <div 
                                       className={`absolute inset-y-0 left-0 ${isSelected ? 'bg-blue-500/20' : 'bg-white/5'} transition-all duration-1000 ease-out`}
                                       style={{ width: `${opt.percentage}%` }}
@@ -411,7 +412,7 @@ export default function PollsPage() {
                                       </span>
                                     </div>
                                     
-                                    {(hasVoted || !poll.is_open) && (
+                                    {(hasVoted || !poll.is_open) && poll.show_results && (
                                       <div className="flex items-center gap-3">
                                         <span className="text-sm text-zinc-500">{opt.count} votes</span>
                                         <span className={`font-bold ${isSelected ? 'text-blue-400' : 'text-zinc-400'}`}>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Loader2, Plus, Edit, Trash2, CheckCircle, XCircle, ShieldAlert } from 'lucide-react';
+import { Loader2, Plus, Edit, Trash2, CheckCircle, XCircle, ShieldAlert, Download } from 'lucide-react';
 
 interface PollOption {
   id: string;
@@ -15,6 +15,7 @@ interface Poll {
   options: PollOption[];
   is_published: boolean;
   is_open: boolean;
+  show_results: boolean;
   created_at: string;
 }
 
@@ -52,6 +53,7 @@ export default function AdminPollsPage() {
     options: [{ id: '1', text: '' }, { id: '2', text: '' }],
     is_published: false,
     is_open: true,
+    show_results: false,
   });
 
   const [requestFormData, setRequestFormData] = useState({
@@ -169,6 +171,7 @@ export default function AdminPollsPage() {
         options: [{ id: '1', text: '' }, { id: '2', text: '' }],
         is_published: false,
         is_open: true,
+        show_results: false,
       });
       setMessage({ type: 'success', text: editingPoll ? 'Poll updated successfully!' : 'Poll created successfully!' });
       setTimeout(() => setMessage(null), 3000);
@@ -263,6 +266,7 @@ export default function AdminPollsPage() {
       options: poll.options,
       is_published: poll.is_published,
       is_open: poll.is_open,
+      show_results: poll.show_results || false,
     });
     setIsCreating(true);
   };
@@ -289,6 +293,41 @@ export default function AdminPollsPage() {
       const percentage = totalVotes === 0 ? 0 : Math.round((count / totalVotes) * 100);
       return { ...opt, count, percentage };
     });
+  };
+
+  const handleDownloadCSV = () => {
+    if (submissions.length === 0) return;
+
+    const allKeys = new Set<string>();
+    submissions.forEach(sub => Object.keys(sub).forEach(key => allKeys.add(key)));
+    
+    const metadataKeys = ['id', 'user_id', 'name', 'email', 'phone', 'class_roll', 'admission_roll', 'created_at', 'updated_at'];
+    const otherKeys = Array.from(allKeys).filter(key => !metadataKeys.includes(key));
+    const header = [...metadataKeys.filter(k => allKeys.has(k)), ...otherKeys];
+
+    const csvRows = [];
+    csvRows.push(header.join(','));
+
+    submissions.forEach(sub => {
+      const row = header.map(key => {
+        let value = sub[key] === null || sub[key] === undefined ? '' : String(sub[key]);
+        if (value.includes(',') || value.includes('\\n') || value.includes('"')) {
+          value = `"${value.replace(/"/g, '""')}"`;
+        }
+        return value;
+      });
+      csvRows.push(row.join(','));
+    });
+
+    const csvString = csvRows.join('\\n');
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `submissions_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const handleDeleteRequest = async (id: string) => {
@@ -408,6 +447,7 @@ export default function AdminPollsPage() {
                     options: [{ id: '1', text: '' }, { id: '2', text: '' }],
                     is_published: false,
                     is_open: true,
+                    show_results: false,
                   });
                   setActiveTab('polls');
                   setIsCreating(true);
@@ -527,7 +567,7 @@ export default function AdminPollsPage() {
                   </button>
                 </div>
 
-                <div className="flex items-center gap-6 pt-4 border-t border-white/5">
+                <div className="flex items-center gap-6 pt-4 border-t border-white/5 flex-wrap">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
@@ -546,6 +586,16 @@ export default function AdminPollsPage() {
                       className="w-5 h-5 rounded border-white/10 bg-zinc-900 text-blue-500 focus:ring-blue-500/20"
                     />
                     <span className="text-sm font-medium text-white">Open for voting</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={pollFormData.show_results}
+                      onChange={(e) => setPollFormData({ ...pollFormData, show_results: e.target.checked })}
+                      className="w-5 h-5 rounded border-white/10 bg-zinc-900 text-blue-500 focus:ring-blue-500/20"
+                    />
+                    <span className="text-sm font-medium text-white">Show results to users</span>
                   </label>
                 </div>
 
@@ -783,8 +833,18 @@ export default function AdminPollsPage() {
             )}
 
             {activeTab === 'submissions' && (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
+              <div className="space-y-4">
+                <div className="flex justify-end">
+                  <button
+                    onClick={handleDownloadCSV}
+                    disabled={submissions.length === 0}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Download className="h-4 w-4" /> Download CSV
+                  </button>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-white/10">
                       <th className="py-4 px-4 text-xs font-bold uppercase tracking-widest text-zinc-500">Student</th>
@@ -835,6 +895,7 @@ export default function AdminPollsPage() {
                     )}
                   </tbody>
                 </table>
+              </div>
               </div>
             )}
           </div>

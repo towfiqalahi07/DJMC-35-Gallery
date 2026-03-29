@@ -43,11 +43,11 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { title, description, options, is_published, is_open } = body;
+    const { title, description, options, is_published, is_open, show_results } = body;
 
     const { data, error } = await supabaseAdmin
       .from('polls')
-      .insert([{ title, description, options, is_published, is_open }])
+      .insert([{ title, description, options, is_published, is_open, show_results }])
       .select()
       .single();
 
@@ -70,11 +70,11 @@ export async function PUT(req: Request) {
     }
 
     const body = await req.json();
-    const { id, title, description, options, is_published, is_open } = body;
+    const { id, title, description, options, is_published, is_open, show_results } = body;
 
     const { data, error } = await supabaseAdmin
       .from('polls')
-      .update({ title, description, options, is_published, is_open })
+      .update({ title, description, options, is_published, is_open, show_results })
       .eq('id', id)
       .select()
       .single();
