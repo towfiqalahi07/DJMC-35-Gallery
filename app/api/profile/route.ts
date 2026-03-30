@@ -39,6 +39,7 @@ export async function POST(req: Request) {
 
     const body = await req.json();
     
+    // Notice we removed photo_url from here. We will set it conditionally below.
     const payload = {
       user_id: user.id,
       name: body.name,
@@ -52,27 +53,27 @@ export async function POST(req: Request) {
       whatsapp: body.whatsapp,
       facebook: body.facebook,
       class_roll: body.classRoll,
-      photo_url: body.photo_url,
     };
 
-    // Check if profile exists for this user
+    // Check if profile exists for this user (Added photo_url to select)
     const { data: existingProfile } = await supabaseAdmin
       .from('students')
-      .select('id, is_approved')
+      .select('id, is_approved, photo_url')
       .eq('user_id', user.id)
       .maybeSingle();
 
     if (existingProfile) {
       const { error } = await supabaseAdmin.from('students').update({
         ...payload,
+        photo_url: existingProfile.photo_url || body.photo_url, // Keep existing or fallback to Google
         is_approved: existingProfile.is_approved // preserve approval status
       }).eq('id', existingProfile.id);
       if (error) throw error;
     } else {
-      // Check if phone exists
+      // Check if phone exists (Added photo_url to select)
       const { data: existingPhone } = await supabaseAdmin
         .from('students')
-        .select('id, user_id, is_approved')
+        .select('id, user_id, is_approved, photo_url')
         .eq('phone', payload.phone)
         .maybeSingle();
 
@@ -82,12 +83,14 @@ export async function POST(req: Request) {
          }
          const { error } = await supabaseAdmin.from('students').update({
             ...payload,
+            photo_url: existingPhone.photo_url || body.photo_url, // Keep existing or fallback to Google
             is_approved: existingPhone.is_approved
          }).eq('id', existingPhone.id);
          if (error) throw error;
       } else {
          const { error } = await supabaseAdmin.from('students').insert([{
             ...payload,
+            photo_url: body.photo_url, // No existing record, use Google photo
             is_approved: false
          }]);
          if (error) throw error;
