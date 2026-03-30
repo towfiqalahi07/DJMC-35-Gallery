@@ -8,12 +8,25 @@ export const runtime = 'edge';
 export async function POST(req: Request) {
   try {
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const adminPassword = req.headers.get('x-admin-password')?.trim();
+    
+    let user = null;
 
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+    if (adminPassword) {
+      let expectedPassword = process.env.ADMIN_PASSWORD || 'djmc35admin';
+      expectedPassword = expectedPassword.replace(/^["']|["']$/g, '').trim();
+      if (adminPassword === expectedPassword) {
+        user = { id: 'admin' };
+      }
+    } else if (authHeader) {
+      const token = authHeader.replace('Bearer ', '');
+      const { data: { user: authUser }, error: authError } = await supabaseAdmin.auth.getUser(token);
+      if (!authError && authUser) {
+        user = authUser;
+      }
+    }
 
-    if (authError || !user) return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const { filename, contentType } = await req.json();
 

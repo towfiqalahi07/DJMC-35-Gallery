@@ -96,28 +96,35 @@ function AnnouncementsContent() {
               <div 
                 key={ann.id} 
                 onClick={() => setSelectedItem({ ...ann, type: 'announcement', parsedTitle: title, parsedCategory: category })}
-                className="p-6 rounded-2xl bg-zinc-900/50 border border-white/5 cursor-pointer hover:border-white/20 transition-all"
+                className="group relative overflow-hidden p-6 sm:p-8 rounded-3xl bg-zinc-900/40 border border-white/10 cursor-pointer hover:border-blue-500/30 transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-blue-500/10"
               >
-                <div className="flex justify-between items-start gap-4 mb-2">
-                  <div className="flex items-center gap-3">
-                    <h3 className="text-xl font-bold text-white">{title}</h3>
+                <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-blue-500 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                
+                <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-4">
+                  <div className="flex flex-wrap items-center gap-3 order-2 sm:order-1">
                     {ann.is_pinned && (
-                      <span className="px-2 py-1 rounded text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                      <span className="px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center gap-1">
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
                         Pinned
                       </span>
                     )}
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${
-                      category === 'Urgent' ? 'bg-red-500/10 text-red-400' : 'bg-blue-500/10 text-blue-400'
+                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider ${
+                      category === 'Urgent' ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
                     }`}>
                       {category}
                     </span>
                   </div>
-                  {ann.attachment_url && <Paperclip className="h-5 w-5 text-zinc-500 shrink-0" />}
+                  <div className="flex items-center gap-3 order-1 sm:order-2 w-full sm:w-auto justify-between sm:justify-end">
+                    <span className="text-sm font-medium text-zinc-500 flex items-center gap-1.5">
+                      <Bell className="w-4 h-4" />
+                      {new Date(ann.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </span>
+                    {ann.attachment_url && <Paperclip className="h-5 w-5 text-zinc-500 shrink-0 group-hover:text-blue-400 transition-colors" />}
+                  </div>
                 </div>
-                <p className="text-zinc-400 whitespace-pre-wrap line-clamp-2">{ann.content}</p>
-                <div className="mt-4 text-sm text-zinc-500">
-                  {new Date(ann.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                </div>
+                
+                <h3 className="text-2xl font-bold text-white group-hover:text-blue-300 transition-colors mb-3">{title}</h3>
+                <p className="text-zinc-400 whitespace-pre-wrap line-clamp-3 leading-relaxed">{ann.content}</p>
               </div>
             );
           })}
@@ -141,37 +148,61 @@ function AnnouncementsContent() {
               <div 
                 key={event.id} 
                 onClick={() => setSelectedItem({ ...event, type: 'event', parsedTitle: title, parsedTag: tag })}
-                className="p-6 rounded-2xl bg-zinc-900/50 border border-white/5 flex flex-col sm:flex-row gap-6 cursor-pointer hover:border-white/20 transition-all"
+                className="group relative overflow-hidden rounded-3xl bg-zinc-900/40 border border-white/10 flex flex-col sm:flex-row cursor-pointer hover:border-purple-500/30 transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-purple-500/10"
               >
-                <div className="flex flex-col items-center justify-center w-20 h-20 rounded-2xl bg-purple-500/10 text-purple-400 shrink-0">
-                  <span className="text-sm font-bold uppercase">{new Date(event.date).toLocaleString('default', { month: 'short' })}</span>
-                  <span className="text-2xl font-bold leading-none">{new Date(event.date).getDate()}</span>
-                </div>
-                <div className="flex-1">
-                  <div className="flex justify-between items-start gap-4 mb-2">
-                    <div className="flex items-center gap-3">
-                      <h3 className="text-xl font-bold text-white">{title}</h3>
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${
-                        tag === 'Cancelled' ? 'bg-red-500/10 text-red-400' :
-                        tag === 'Delayed' ? 'bg-orange-500/10 text-orange-400' :
-                        tag === 'Past' ? 'bg-zinc-500/10 text-zinc-400' :
-                        'bg-emerald-500/10 text-emerald-400'
+                {event.cover_photo_url ? (
+                  <div className="w-full sm:w-2/5 md:w-1/3 h-56 sm:h-auto relative overflow-hidden shrink-0">
+                    <img src={event.cover_photo_url} alt={title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                    <div className="absolute inset-0 bg-gradient-to-t sm:bg-gradient-to-r from-zinc-900/90 sm:from-zinc-900/50 to-transparent"></div>
+                    
+                    <div className="absolute top-4 left-4 flex flex-col items-center justify-center w-14 h-16 rounded-2xl bg-black/50 backdrop-blur-md border border-white/10 text-white shadow-xl">
+                      <span className="text-xs font-bold uppercase tracking-widest text-purple-300">{new Date(event.date).toLocaleString('default', { month: 'short' })}</span>
+                      <span className="text-2xl font-bold leading-none">{new Date(event.date).getDate()}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="hidden sm:flex flex-col items-center justify-center w-32 bg-gradient-to-br from-purple-900/20 to-zinc-900/50 border-r border-white/5 shrink-0">
+                    <span className="text-sm font-bold uppercase tracking-widest text-purple-400">{new Date(event.date).toLocaleString('default', { month: 'short' })}</span>
+                    <span className="text-4xl font-bold text-white mt-1">{new Date(event.date).getDate()}</span>
+                  </div>
+                )}
+
+                <div className="p-6 sm:p-8 flex-1 flex flex-col justify-center relative">
+                  {!event.cover_photo_url && (
+                    <div className="sm:hidden flex items-center gap-3 mb-4">
+                       <div className="flex flex-col items-center justify-center w-12 h-14 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400">
+                        <span className="text-[10px] font-bold uppercase tracking-widest">{new Date(event.date).toLocaleString('default', { month: 'short' })}</span>
+                        <span className="text-xl font-bold leading-none">{new Date(event.date).getDate()}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between items-start gap-4 mb-3">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider ${
+                        tag === 'Cancelled' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
+                        tag === 'Delayed' ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20' :
+                        tag === 'Past' ? 'bg-zinc-500/10 text-zinc-400 border border-zinc-500/20' :
+                        'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                       }`}>
                         {tag}
                       </span>
                     </div>
-                    {event.attachment_url && <Paperclip className="h-5 w-5 text-zinc-500 shrink-0" />}
+                    {event.attachment_url && <Paperclip className="h-5 w-5 text-zinc-500 shrink-0 group-hover:text-purple-400 transition-colors" />}
                   </div>
-                  <p className="text-zinc-400 whitespace-pre-wrap mb-4 line-clamp-2">{event.description}</p>
-                  <div className="flex items-center gap-4 text-sm text-zinc-500">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-4 w-4" />
-                      {new Date(event.date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                  
+                  <h3 className="text-2xl font-bold text-white group-hover:text-purple-300 transition-colors mb-3">{title}</h3>
+                  <p className="text-zinc-400 whitespace-pre-wrap mb-6 line-clamp-2 leading-relaxed">{event.description}</p>
+                  
+                  <div className="flex flex-wrap items-center gap-5 text-sm font-medium text-zinc-500 mt-auto">
+                    <div className="flex items-center gap-2 bg-zinc-800/50 px-3 py-1.5 rounded-lg border border-white/5">
+                      <Calendar className="h-4 w-4 text-purple-400" />
+                      <span className="text-zinc-300">{new Date(event.date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
                     {event.location && (
-                      <div className="flex items-center gap-1">
-                        <MapPin className="h-4 w-4" />
-                        {event.location}
+                      <div className="flex items-center gap-2 bg-zinc-800/50 px-3 py-1.5 rounded-lg border border-white/5">
+                        <MapPin className="h-4 w-4 text-purple-400" />
+                        <span className="text-zinc-300">{event.location}</span>
                       </div>
                     )}
                   </div>
@@ -221,6 +252,11 @@ function AnnouncementsContent() {
             </div>
             
             <div className="p-6 space-y-6">
+              {selectedItem.type === 'event' && selectedItem.cover_photo_url && (
+                <div className="w-full h-64 rounded-2xl overflow-hidden relative mb-6">
+                  <img src={selectedItem.cover_photo_url} alt={selectedItem.parsedTitle || selectedItem.title} className="w-full h-full object-cover" />
+                </div>
+              )}
               {selectedItem.type === 'event' && (
                 <div className="flex flex-wrap items-center gap-4 text-sm font-medium">
                   <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-purple-500/10 text-purple-400">

@@ -309,7 +309,7 @@ export default function AdminPollsPage() {
     const otherKeys = Array.from(allKeys).filter(key => !metadataKeys.includes(key));
     
     // Only include class_roll and the submitted data (otherKeys)
-    const header = [];
+    const header: string[] = [];
     if (allKeys.has('class_roll')) {
       header.push('class_roll');
     }

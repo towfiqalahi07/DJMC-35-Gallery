@@ -5,3 +5,6 @@ ALTER TABLE public.resources ADD COLUMN IF NOT EXISTS author TEXT;
 
 -- Add 'is_pinned' column to announcements table
 ALTER TABLE public.announcements ADD COLUMN IF NOT EXISTS is_pinned BOOLEAN DEFAULT false;
+
+-- Add 'cover_photo_url' column to events table
+ALTER TABLE public.events ADD COLUMN IF NOT EXISTS cover_photo_url TEXT;

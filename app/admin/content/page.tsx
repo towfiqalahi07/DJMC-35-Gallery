@@ -20,6 +20,49 @@ export default function AdminContentPage() {
   
   const [formData, setFormData] = useState<any>({});
 
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: string) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-password': password,
+        },
+        body: JSON.stringify({
+          filename: file.name,
+          contentType: file.type,
+        }),
+      });
+
+      if (!res.ok) throw new Error('Failed to get upload URL');
+      const { signedUrl, publicUrl } = await res.json();
+
+      const uploadRes = await fetch(signedUrl, {
+        method: 'PUT',
+        body: file,
+        headers: {
+          'Content-Type': file.type,
+        },
+      });
+
+      if (!uploadRes.ok) throw new Error('Failed to upload file');
+
+      setFormData({ ...formData, [field]: publicUrl });
+      setMessage({ type: 'success', text: 'File uploaded successfully!' });
+      setTimeout(() => setMessage(null), 3000);
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.message });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -449,14 +492,38 @@ export default function AdminContentPage() {
                       />
                     </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-zinc-400 mb-2">Attachment URL (Optional)</label>
-                    <input
-                      type="url"
-                      value={formData.attachment_url || ''}
-                      onChange={(e) => setFormData({ ...formData, attachment_url: e.target.value })}
-                      className="w-full rounded-xl border border-white/10 bg-zinc-900 py-3 px-4 text-white focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/20"
-                    />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-400 mb-2">Attachment URL (Optional)</label>
+                      <input
+                        type="url"
+                        value={formData.attachment_url || ''}
+                        onChange={(e) => setFormData({ ...formData, attachment_url: e.target.value })}
+                        className="w-full rounded-xl border border-white/10 bg-zinc-900 py-3 px-4 text-white focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/20"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-400 mb-2">Cover Photo URL (Optional)</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="url"
+                          value={formData.cover_photo_url || ''}
+                          onChange={(e) => setFormData({ ...formData, cover_photo_url: e.target.value })}
+                          className="w-full rounded-xl border border-white/10 bg-zinc-900 py-3 px-4 text-white focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/20"
+                          placeholder="https://example.com/image.jpg"
+                        />
+                        <label className="flex items-center justify-center px-4 rounded-xl bg-zinc-800 text-white hover:bg-zinc-700 cursor-pointer transition-colors whitespace-nowrap">
+                          {isUploading ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Upload'}
+                          <input 
+                            type="file" 
+                            accept="image/*" 
+                            className="hidden" 
+                            onChange={(e) => handleFileUpload(e, 'cover_photo_url')}
+                            disabled={isUploading}
+                          />
+                        </label>
+                      </div>
+                    </div>
                   </div>
                 </>
               )}
