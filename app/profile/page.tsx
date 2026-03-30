@@ -284,7 +284,7 @@ export default function ProfilePage() {
       <main className="flex-1 max-w-3xl mx-auto w-full px-4 py-12">
         <div className="mb-8 flex items-center gap-6">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={user?.user_metadata.avatar_url} alt="Profile" className="w-24 h-24 rounded-full border-4 border-zinc-800 shadow-xl" />
+          <img src={profile?.photo_url || user?.user_metadata.avatar_url} alt="Profile" className="w-24 h-24 rounded-full border-4 border-zinc-800 shadow-xl" />
           <div>
             <h1 className="text-3xl font-bold text-white">{formData.name}</h1>
             <p className="text-zinc-400">{formData.email}</p>
