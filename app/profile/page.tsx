@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { User, Mail, Phone, Loader2, CheckCircle2, AlertCircle, Edit2, X, Globe } from 'lucide-react';
+import { User, Mail, Phone, Loader2, CheckCircle2, AlertCircle, Edit2, X, Globe, GraduationCap } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function ProfilePage() {
