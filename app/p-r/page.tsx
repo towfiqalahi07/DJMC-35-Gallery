@@ -51,6 +51,14 @@ export default function PollsPage() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [inputValue, setInputValue] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [profile, setProfile] = useState<any>(null);
+  const [showProfileForm, setShowProfileForm] = useState(false);
+  const [profileFormData, setProfileFormData] = useState({
+    name: '',
+    phone: '',
+    class_roll: ''
+  });
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -98,6 +106,28 @@ export default function PollsPage() {
 
       if (!infoError) {
         setCollectedInfo(infoData);
+      }
+
+      // Fetch user's profile
+      const { data: profileData, error: profileError } = await supabase
+        .from('students')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .maybeSingle();
+
+      if (!profileError && profileData) {
+        setProfile(profileData);
+        setProfileFormData({
+          name: profileData.name || session.user.user_metadata?.full_name || '',
+          phone: profileData.phone || '',
+          class_roll: profileData.class_roll || ''
+        });
+      } else {
+        setProfileFormData({
+          name: session.user.user_metadata?.full_name || '',
+          phone: '',
+          class_roll: ''
+        });
       }
 
       // Fetch votes for these polls
@@ -262,6 +292,61 @@ export default function PollsPage() {
     }
   };
 
+  const handleProfileSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    setIsSavingProfile(true);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      const res = await fetch('/api/profile', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          name: profileFormData.name,
+          phone: profileFormData.phone,
+          classRoll: profileFormData.class_roll,
+          // preserve other fields if they exist
+          email: profile?.email || session.user.email,
+          hscBatch: profile?.hsc_batch,
+          college: profile?.college,
+          bloodGroup: profile?.blood_group,
+          admissionRoll: profile?.admission_roll,
+          district: profile?.district,
+          whatsapp: profile?.whatsapp,
+          facebook: profile?.facebook,
+          photo_url: profile?.photo_url,
+        }),
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to update profile');
+      }
+
+      // Update local state
+      setProfile((prev: any) => ({
+        ...prev,
+        name: profileFormData.name,
+        phone: profileFormData.phone,
+        class_roll: profileFormData.class_roll
+      }));
+      
+      setShowProfileForm(false);
+      setMessage({ type: 'success', text: 'Profile updated successfully! You can now submit your info.' });
+      setTimeout(() => setMessage(null), 3000);
+    } catch (error: any) {
+      setMessage({ type: 'error', text: error.message });
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
   const calculateResults = (pollId: string, options: PollOption[]) => {
     const pollVotes = votes[pollId] || [];
     const totalVotes = pollVotes.length;
@@ -340,6 +425,10 @@ export default function PollsPage() {
                       <button
                         key={request.id}
                         onClick={() => {
+                          if (!profile?.name || !profile?.phone || !profile?.class_roll) {
+                            setShowProfileForm(true);
+                            return;
+                          }
                           setActiveRequest(request);
                           setInputValue(value || '');
                           setSelectedFile(null);
@@ -546,6 +635,65 @@ export default function PollsPage() {
                     className="flex-1 px-6 py-3 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-500 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                   >
                     {submitting === activeRequest.id ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Submit'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+        {/* Profile Completion Modal */}
+        {showProfileForm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+            <div className="bg-zinc-900 border border-white/10 rounded-3xl p-8 w-full max-w-md shadow-2xl">
+              <h2 className="text-2xl font-bold text-white mb-2">Complete Your Profile</h2>
+              <p className="text-zinc-400 mb-6">Please provide your basic information before submitting info requests.</p>
+              
+              <form onSubmit={handleProfileSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-zinc-400 mb-2">Full Name</label>
+                  <input
+                    type="text"
+                    value={profileFormData.name}
+                    onChange={(e) => setProfileFormData({ ...profileFormData, name: e.target.value })}
+                    className="w-full rounded-xl border border-white/10 bg-zinc-900 py-3 px-4 text-white focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/20"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-zinc-400 mb-2">Phone Number</label>
+                  <input
+                    type="tel"
+                    value={profileFormData.phone}
+                    onChange={(e) => setProfileFormData({ ...profileFormData, phone: e.target.value })}
+                    className="w-full rounded-xl border border-white/10 bg-zinc-900 py-3 px-4 text-white focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/20"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-zinc-400 mb-2">Class Roll</label>
+                  <input
+                    type="text"
+                    value={profileFormData.class_roll}
+                    onChange={(e) => setProfileFormData({ ...profileFormData, class_roll: e.target.value })}
+                    className="w-full rounded-xl border border-white/10 bg-zinc-900 py-3 px-4 text-white focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/20"
+                    required
+                  />
+                </div>
+                
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowProfileForm(false)}
+                    className="flex-1 px-6 py-3 rounded-xl bg-zinc-800 text-white font-bold hover:bg-zinc-700 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSavingProfile}
+                    className="flex-1 px-6 py-3 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-500 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {isSavingProfile ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Profile'}
                   </button>
                 </div>
               </form>

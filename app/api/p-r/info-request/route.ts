@@ -49,7 +49,6 @@ export async function POST(req: Request) {
       phone,
       email,
       class_roll,
-      admission_roll,
       [target_column]: value,
       updated_at: new Date().toISOString(),
     };
