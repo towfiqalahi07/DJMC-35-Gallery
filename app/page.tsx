@@ -58,16 +58,16 @@ export default function HomePage() {
 
       <main className="flex-1">
         {/* Section 1: Hero */}
-        <section className="relative min-h-[85vh] flex flex-col items-center justify-center overflow-hidden px-4 pt-24 pb-20">
+        <section className="relative min-h-[75vh] md:min-h-[85vh] flex flex-col items-center justify-center overflow-hidden px-4 pt-16 md:pt-24 pb-20">
           {/* Background Effects */}
           <div className="absolute inset-0 w-full h-full bg-black">
             <div className="absolute inset-0 bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-[size:14px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]"></div>
           </div>
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-blue-500/20 blur-[120px] rounded-full pointer-events-none"></div>
           
-          <div className="relative z-10 flex flex-col items-center max-w-4xl mx-auto text-center mt-8">
+          <div className="relative z-10 flex flex-col items-center max-w-4xl mx-auto text-center mt-0 md:mt-8">
             {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-sm font-medium text-blue-300 mb-8 backdrop-blur-sm shadow-2xl">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-xs md:text-sm font-medium text-blue-300 mb-6 md:mb-8 backdrop-blur-sm shadow-2xl">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
@@ -76,25 +76,25 @@ export default function HomePage() {
             </div>
 
             {/* Logo */}
-            <div className="relative group mb-8">
+            <div className="relative group mb-6 md:mb-8">
               <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
-              <div className="relative h-28 w-28 bg-zinc-900 border border-white/10 rounded-full flex items-center justify-center shadow-2xl">
-                <span className="text-white font-bold text-3xl tracking-tighter">DjMC</span>
+              <div className="relative h-24 w-24 md:h-28 md:w-28 bg-zinc-900 border border-white/10 rounded-full flex items-center justify-center shadow-2xl">
+                <span className="text-white font-bold text-2xl md:text-3xl tracking-tighter">DjMC</span>
               </div>
             </div>
             
             {/* Typography */}
-            <h1 className="text-5xl md:text-7xl font-extrabold text-transparent bg-clip-text bg-gradient-to-b from-white to-white/70 tracking-tight mb-6">
+            <h1 className="text-4xl md:text-7xl font-extrabold text-transparent bg-clip-text bg-gradient-to-b from-white to-white/70 tracking-tight mb-4 md:mb-6">
               Dinajpur Medical College
             </h1>
             
-            <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-6 mb-8">
-              <h2 className="text-3xl md:text-4xl font-bold text-blue-400">DjMC 35</h2>
+            <div className="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-6 mb-6 md:mb-8">
+              <h2 className="text-2xl md:text-4xl font-bold text-blue-400">DjMC 35</h2>
               <div className="hidden md:block w-1.5 h-1.5 rounded-full bg-zinc-600"></div>
-              <h2 className="text-4xl md:text-5xl font-bold text-purple-400 font-bengali" suppressHydrationWarning>প্রত্যুষ্মান ৩৫</h2>
+              <h2 className="text-3xl md:text-5xl font-bold text-purple-400 font-bengali" suppressHydrationWarning>প্রত্যুষ্মান ৩৫</h2>
             </div>
 
-            <p className="text-lg md:text-xl text-zinc-400 max-w-2xl mb-12 leading-relaxed">
+            <p className="text-base md:text-xl text-zinc-400 max-w-2xl mb-10 md:mb-12 leading-relaxed px-4 md:px-0">
               Welcome to the official portal for Batch 35. Stay updated with announcements, upcoming events, and access academic resources all in one place.
             </p>
 

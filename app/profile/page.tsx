@@ -288,15 +288,23 @@ export default function ProfilePage() {
           <div>
             <h1 className="text-3xl font-bold text-white">{formData.name}</h1>
             <p className="text-zinc-400">{formData.email}</p>
-            {profile && profile.is_approved ? (
-              <span className="inline-flex items-center gap-1 mt-2 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-medium border border-emerald-500/20">
-                <CheckCircle2 className="h-3 w-3" /> Approved
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 mt-2 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 text-xs font-medium border border-amber-500/20">
-                <AlertCircle className="h-3 w-3" /> Pending Approval
-              </span>
-            )}
+            <div className="flex flex-wrap items-center gap-3 mt-3">
+              {profile && profile.is_approved ? (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-medium border border-emerald-500/20">
+                  <CheckCircle2 className="h-3 w-3" /> Approved
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 text-xs font-medium border border-amber-500/20">
+                  <AlertCircle className="h-3 w-3" /> Pending Approval
+                </span>
+              )}
+              {profile?.class_roll && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 text-sm font-bold border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.15)]">
+                  <GraduationCap className="h-3.5 w-3.5" />
+                  Roll: {profile.class_roll}
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
@@ -334,10 +342,6 @@ export default function ProfilePage() {
                 <div>
                   <label className="block text-sm font-medium text-zinc-500 mb-1">MAT Roll</label>
                   <div className="text-white font-medium">{profile.admission_roll || <span className="text-zinc-600 italic">Not provided</span>}</div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-zinc-500 mb-1">Class Roll</label>
-                  <div className="text-white font-medium">{profile.class_roll || <span className="text-zinc-600 italic">Not provided</span>}</div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-zinc-500 mb-1">Home District</label>
@@ -431,6 +435,12 @@ export default function ProfilePage() {
                   )}
                 </div>
 
+              </div>
+            </div>
+
+            <div className="bg-zinc-900/50 p-6 sm:p-8 rounded-3xl border border-white/5">
+              <h2 className="text-xl font-bold text-white mb-6">Academic Identity</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-6 gap-x-8">
                 <div>
                   <label className="block text-sm font-medium text-zinc-500 mb-2">Class Roll</label>
                   {editingField === 'class_roll' ? (
@@ -440,6 +450,7 @@ export default function ProfilePage() {
                         value={formData.classRoll}
                         onChange={(e) => setFormData({...formData, classRoll: e.target.value})}
                         className="flex-1 rounded-xl border border-white/10 bg-zinc-900 py-2 px-3 text-white focus:border-white/20 focus:outline-none"
+                        placeholder="Enter your class roll"
                       />
                       <button onClick={() => handleInlineSave('class_roll')} disabled={isSaving} className="p-2 bg-emerald-500/20 text-emerald-400 rounded-xl hover:bg-emerald-500/30">
                         {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
@@ -454,21 +465,20 @@ export default function ProfilePage() {
                   ) : (
                     <div className="flex justify-between items-center bg-zinc-900/30 py-3 px-4 rounded-xl border border-white/5 group">
                       <div className="flex items-center gap-3 overflow-hidden">
-                        <span className="text-white truncate">{profile.class_roll || <span className="text-zinc-600 italic">Not provided</span>}</span>
+                        <GraduationCap className="w-4 h-4 text-zinc-400 shrink-0" />
+                        <span className="text-white truncate font-medium">{profile.class_roll || <span className="text-zinc-600 italic">Not provided</span>}</span>
                       </div>
-                      {!profile.class_roll && (
-                        <button 
-                          onClick={() => {
-                            setFormData({...formData, classRoll: profile.class_roll || ''});
-                            setEditingField('class_roll');
-                          }}
-                          className="flex items-center gap-1.5 text-xs font-medium text-zinc-400 hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-2.5 py-1.5 rounded-lg"
-                          title="Edit Class Roll"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                          Edit
-                        </button>
-                      )}
+                      <button 
+                        onClick={() => {
+                          setFormData({...formData, classRoll: profile.class_roll || ''});
+                          setEditingField('class_roll');
+                        }}
+                        className="flex items-center gap-1.5 text-xs font-medium text-zinc-400 hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-2.5 py-1.5 rounded-lg"
+                        title="Edit Class Roll"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                        Edit
+                      </button>
                     </div>
                   )}
                 </div>
