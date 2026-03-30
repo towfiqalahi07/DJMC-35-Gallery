@@ -39,7 +39,6 @@ export async function POST(req: Request) {
 
     const body = await req.json();
     
-    // Notice we removed photo_url from here. We will set it conditionally below.
     const payload = {
       user_id: user.id,
       name: body.name,
@@ -55,25 +54,25 @@ export async function POST(req: Request) {
       class_roll: body.classRoll,
     };
 
-    // Check if profile exists for this user (Added photo_url to select)
+    // Check if profile exists for this user
     const { data: existingProfile } = await supabaseAdmin
       .from('students')
-      .select('id, is_approved, photo_url')
+      .select('id, is_approved, photo_url, name')
       .eq('user_id', user.id)
       .maybeSingle();
 
     if (existingProfile) {
       const { error } = await supabaseAdmin.from('students').update({
         ...payload,
-        photo_url: existingProfile.photo_url || body.photo_url, // Keep existing or fallback to Google
-        is_approved: existingProfile.is_approved // preserve approval status
+        photo_url: existingProfile.photo_url || body.photo_url,
+        is_approved: existingProfile.is_approved
       }).eq('id', existingProfile.id);
       if (error) throw error;
     } else {
-      // Check if phone exists (Added photo_url to select)
+      // Check if phone exists (Added 'name' to the select query)
       const { data: existingPhone } = await supabaseAdmin
         .from('students')
-        .select('id, user_id, is_approved, photo_url')
+        .select('id, user_id, is_approved, photo_url, name')
         .eq('phone', payload.phone)
         .maybeSingle();
 
@@ -83,14 +82,15 @@ export async function POST(req: Request) {
          }
          const { error } = await supabaseAdmin.from('students').update({
             ...payload,
-            photo_url: existingPhone.photo_url || body.photo_url, // Keep existing or fallback to Google
+            name: existingPhone.name || body.name, // <--- Prioritize existing DB name
+            photo_url: existingPhone.photo_url || body.photo_url, 
             is_approved: existingPhone.is_approved
          }).eq('id', existingPhone.id);
          if (error) throw error;
       } else {
          const { error } = await supabaseAdmin.from('students').insert([{
             ...payload,
-            photo_url: body.photo_url, // No existing record, use Google photo
+            photo_url: body.photo_url,
             is_approved: false
          }]);
          if (error) throw error;
