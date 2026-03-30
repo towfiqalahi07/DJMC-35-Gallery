@@ -99,10 +99,11 @@ export default function ProfilePage() {
 
     const { data } = await res.json();
 
-    if (data && !data.user_id) {
+   if (data && !data.user_id) {
       // Autofill data
       setFormData(prev => ({
         ...prev,
+        name: data.name || prev.name, // <--- ADD THIS LINE
         hscBatch: data.hsc_batch || '',
         college: data.college || '',
         bloodGroup: data.blood_group || '',
