@@ -92,6 +92,9 @@ export default function ResourcesPage() {
                   <LinkIcon className="h-5 w-5 text-zinc-500 group-hover:text-emerald-400 transition-colors" />
                 </div>
                 <h3 className="text-xl font-bold text-white mb-2 group-hover:text-emerald-400 transition-colors">{res.title}</h3>
+                {res.author && (
+                  <p className="text-xs font-medium text-emerald-500/80 mb-3">By {res.author}</p>
+                )}
                 {res.description && (
                   <p className="text-sm text-zinc-400 line-clamp-3 mt-auto">{res.description}</p>
                 )}

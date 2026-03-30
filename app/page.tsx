@@ -25,6 +25,7 @@ export default function HomePage() {
       const { data: annData } = await supabase
         .from('announcements')
         .select('*')
+        .order('is_pinned', { ascending: false, nullsFirst: false })
         .order('date', { ascending: false })
         .limit(3);
       if (annData) setAnnouncements(annData);
@@ -149,6 +150,11 @@ export default function HomePage() {
                     <Link key={ann.id} href={`/announcements?id=${ann.id}`} className="block p-6 rounded-2xl bg-zinc-900/50 border border-white/5 hover:border-white/20 transition-colors group">
                       <div className="flex items-center gap-3 mb-2">
                         <h4 className="text-lg font-semibold text-white group-hover:text-blue-400 transition-colors">{title}</h4>
+                        {ann.is_pinned && (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-medium uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                            Pinned
+                          </span>
+                        )}
                         <span className={`px-2 py-0.5 rounded text-[10px] font-medium uppercase tracking-wider ${
                           category === 'Urgent' ? 'bg-red-500/10 text-red-400' : 'bg-blue-500/10 text-blue-400'
                         }`}>

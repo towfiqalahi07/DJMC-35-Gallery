@@ -20,7 +20,11 @@ function AnnouncementsContent() {
   useEffect(() => {
     async function fetchData() {
       setIsLoading(true);
-      const { data: annData } = await supabase.from('announcements').select('*').order('date', { ascending: false });
+      const { data: annData } = await supabase
+        .from('announcements')
+        .select('*')
+        .order('is_pinned', { ascending: false, nullsFirst: false })
+        .order('date', { ascending: false });
       if (annData) {
         setAnnouncements(annData);
         if (initialId && initialType === 'announcement') {
@@ -97,6 +101,11 @@ function AnnouncementsContent() {
                 <div className="flex justify-between items-start gap-4 mb-2">
                   <div className="flex items-center gap-3">
                     <h3 className="text-xl font-bold text-white">{title}</h3>
+                    {ann.is_pinned && (
+                      <span className="px-2 py-1 rounded text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                        Pinned
+                      </span>
+                    )}
                     <span className={`px-2 py-1 rounded text-xs font-medium ${
                       category === 'Urgent' ? 'bg-red-500/10 text-red-400' : 'bg-blue-500/10 text-blue-400'
                     }`}>

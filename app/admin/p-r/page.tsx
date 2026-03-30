@@ -307,7 +307,13 @@ export default function AdminPollsPage() {
     
     const metadataKeys = ['id', 'user_id', 'name', 'email', 'phone', 'class_roll', 'admission_roll', 'created_at', 'updated_at'];
     const otherKeys = Array.from(allKeys).filter(key => !metadataKeys.includes(key));
-    const header = [...metadataKeys.filter(k => allKeys.has(k)), ...otherKeys];
+    
+    // Only include class_roll and the submitted data (otherKeys)
+    const header = [];
+    if (allKeys.has('class_roll')) {
+      header.push('class_roll');
+    }
+    header.push(...otherKeys);
 
     const csvRows = [];
     csvRows.push(header.join(','));

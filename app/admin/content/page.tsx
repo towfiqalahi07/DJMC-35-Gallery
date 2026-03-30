@@ -78,11 +78,11 @@ export default function AdminContentPage() {
   const handleCreateNew = () => {
     setEditingItem(null);
     if (activeTab === 'announcements') {
-      setFormData({ title: '', content: '', attachment_url: '', is_marquee: false, category: 'General' });
+      setFormData({ title: '', content: '', attachment_url: '', is_marquee: false, is_pinned: false, category: 'General' });
     } else if (activeTab === 'events') {
       setFormData({ title: '', description: '', date: new Date().toISOString().slice(0, 16), location: '', attachment_url: '', tag: 'Upcoming' });
     } else if (activeTab === 'resources') {
-      setFormData({ title: '', description: '', category: 'Books', url: '' });
+      setFormData({ title: '', description: '', category: 'Books', url: '', author: '' });
     }
     setIsCreating(true);
   };
@@ -405,6 +405,15 @@ export default function AdminContentPage() {
                     />
                     <span className="text-sm font-medium text-white">Show in scrolling marquee on homepage</span>
                   </label>
+                  <label className="flex items-center gap-2 cursor-pointer mt-4">
+                    <input
+                      type="checkbox"
+                      checked={formData.is_pinned || false}
+                      onChange={(e) => setFormData({ ...formData, is_pinned: e.target.checked })}
+                      className="w-5 h-5 rounded border-white/10 bg-zinc-900 text-blue-500 focus:ring-blue-500/20"
+                    />
+                    <span className="text-sm font-medium text-white">Pin this announcement (Prioritize on Home Page)</span>
+                  </label>
                 </>
               )}
 
@@ -488,6 +497,16 @@ export default function AdminContentPage() {
                         required
                       />
                     </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-400 mb-2 mt-6">Author (Optional)</label>
+                    <input
+                      type="text"
+                      value={formData.author || ''}
+                      onChange={(e) => setFormData({ ...formData, author: e.target.value })}
+                      className="w-full rounded-xl border border-white/10 bg-zinc-900 py-3 px-4 text-white focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/20"
+                      placeholder="e.g. John Doe"
+                    />
                   </div>
                 </>
               )}
