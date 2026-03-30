@@ -30,6 +30,7 @@ interface InfoRequest {
   target_column: string;
   options?: string[];
   is_active: boolean;
+  placeholder?: string;
 }
 
 interface Vote {
@@ -49,6 +50,7 @@ export default function PollsPage() {
   const [activeRequest, setActiveRequest] = useState<InfoRequest | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [inputValue, setInputValue] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -78,7 +80,7 @@ export default function PollsPage() {
       const { data: requestsData, error: requestsError } = await supabase
         .from('info_requests')
         .select('*')
-        .eq('is_active', true)
+        .or('is_active.eq.true,is_active.is.null')
         .order('created_at', { ascending: false });
 
       if (requestsError) {
@@ -183,6 +185,45 @@ export default function PollsPage() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
 
+      let finalValue = inputValue;
+
+      if (activeRequest.field_type === 'image' && selectedFile) {
+        // Get presigned URL
+        const uploadRes = await fetch('/api/upload', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            filename: selectedFile.name,
+            contentType: selectedFile.type,
+          }),
+        });
+
+        if (!uploadRes.ok) {
+          const error = await uploadRes.json();
+          throw new Error(error.error || 'Failed to get upload URL');
+        }
+
+        const { signedUrl, publicUrl } = await uploadRes.json();
+
+        // Upload file to R2
+        const s3Res = await fetch(signedUrl, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': selectedFile.type,
+          },
+          body: selectedFile,
+        });
+
+        if (!s3Res.ok) {
+          throw new Error('Failed to upload image');
+        }
+
+        finalValue = publicUrl;
+      }
+
       const res = await fetch('/api/p-r/info-request', {
         method: 'POST',
         headers: {
@@ -191,7 +232,7 @@ export default function PollsPage() {
         },
         body: JSON.stringify({ 
           request_id: activeRequest.id, 
-          value: inputValue,
+          value: finalValue,
           target_column: activeRequest.target_column
         }),
       });
@@ -204,11 +245,12 @@ export default function PollsPage() {
       // Update local state
       setCollectedInfo((prev: any) => ({
         ...prev,
-        [activeRequest.target_column]: inputValue
+        [activeRequest.target_column]: finalValue
       }));
       
       setActiveRequest(null);
       setInputValue('');
+      setSelectedFile(null);
       setMessage({ type: 'success', text: 'Information submitted successfully!' });
       
       // Clear message after 3 seconds
@@ -300,6 +342,7 @@ export default function PollsPage() {
                         onClick={() => {
                           setActiveRequest(request);
                           setInputValue(value || '');
+                          setSelectedFile(null);
                         }}
                         className={`flex-none w-[280px] group relative flex flex-col items-start p-5 rounded-2xl border transition-all duration-500 text-left ${
                           isSubmitted 
@@ -465,12 +508,20 @@ export default function PollsPage() {
                         <option key={opt} value={opt}>{opt}</option>
                       ))}
                     </select>
+                  ) : activeRequest.field_type === 'image' ? (
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                      className="w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-500/10 file:text-blue-400 hover:file:bg-blue-500/20"
+                      required
+                    />
                   ) : (
                     <input
                       type={activeRequest.field_type === 'number' ? 'number' : 'text'}
                       value={inputValue}
                       onChange={(e) => setInputValue(e.target.value)}
-                      placeholder={`Enter ${activeRequest.title.toLowerCase()}...`}
+                      placeholder={activeRequest.placeholder || `Enter ${activeRequest.title.toLowerCase()}...`}
                       className="w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                       required
                     />
@@ -480,7 +531,11 @@ export default function PollsPage() {
                 <div className="flex gap-3 pt-4">
                   <button
                     type="button"
-                    onClick={() => setActiveRequest(null)}
+                    onClick={() => {
+                      setActiveRequest(null);
+                      setSelectedFile(null);
+                      setInputValue('');
+                    }}
                     className="flex-1 px-6 py-3 rounded-xl bg-zinc-800 text-white font-bold hover:bg-zinc-700 transition-colors"
                   >
                     Cancel

@@ -44,11 +44,11 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { title, description, field_type, target_column, options, is_active } = body;
+    const { title, description, field_type, target_column, options, is_active, placeholder } = body;
 
     const { data, error } = await supabaseAdmin
       .from('info_requests')
-      .insert([{ title, description, field_type, target_column, options, is_active }])
+      .insert([{ title, description, field_type, target_column, options, is_active, placeholder }])
       .select()
       .single();
 
@@ -71,11 +71,11 @@ export async function PUT(req: Request) {
     }
 
     const body = await req.json();
-    const { id, title, description, field_type, target_column, options, is_active } = body;
+    const { id, title, description, field_type, target_column, options, is_active, placeholder } = body;
 
     const { data, error } = await supabaseAdmin
       .from('info_requests')
-      .update({ title, description, field_type, target_column, options, is_active })
+      .update({ title, description, field_type, target_column, options, is_active, placeholder })
       .eq('id', id)
       .select()
       .single();

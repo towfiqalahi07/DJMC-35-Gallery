@@ -20,15 +20,17 @@ export async function POST(req: Request) {
     }
 
     // Fetch user profile for metadata
-    const { data: profile, error: profileError } = await supabaseAdmin
+    const { data: profile } = await supabaseAdmin
       .from('students')
       .select('name, phone, email, class_roll, admission_roll')
       .eq('user_id', user.id)
       .maybeSingle();
 
-    if (profileError || !profile) {
-      return NextResponse.json({ error: 'User profile not found. Please complete your profile first.' }, { status: 400 });
-    }
+    const name = profile?.name || user.user_metadata?.full_name || user.user_metadata?.name || 'Unknown';
+    const email = profile?.email || user.email || 'Unknown';
+    const phone = profile?.phone || null;
+    const class_roll = profile?.class_roll || null;
+    const admission_roll = profile?.admission_roll || null;
 
     // Check if a record already exists for this user in collected_info
     // We might want to update the existing record or insert a new one.
@@ -43,11 +45,11 @@ export async function POST(req: Request) {
 
     const submissionData: any = {
       user_id: user.id,
-      name: profile.name,
-      phone: profile.phone,
-      email: profile.email,
-      class_roll: profile.class_roll,
-      admission_roll: profile.admission_roll,
+      name,
+      phone,
+      email,
+      class_roll,
+      admission_roll,
       [target_column]: value,
       updated_at: new Date().toISOString(),
     };

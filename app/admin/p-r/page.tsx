@@ -27,6 +27,7 @@ interface InfoRequest {
   target_column: string;
   options?: string[];
   is_active: boolean;
+  placeholder?: string;
   created_at: string;
 }
 
@@ -63,6 +64,7 @@ export default function AdminPollsPage() {
     target_column: '',
     options: [] as string[],
     is_active: true,
+    placeholder: '',
   });
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -224,6 +226,7 @@ export default function AdminPollsPage() {
         target_column: '',
         options: [],
         is_active: true,
+        placeholder: '',
       });
       setMessage({ type: 'success', text: editingRequest ? 'Request updated successfully!' : 'Request created successfully!' });
       setTimeout(() => setMessage(null), 3000);
@@ -280,6 +283,7 @@ export default function AdminPollsPage() {
       target_column: request.target_column,
       options: request.options || [],
       is_active: request.is_active,
+      placeholder: request.placeholder || '',
     });
     setIsCreating(true);
   };
@@ -466,6 +470,7 @@ export default function AdminPollsPage() {
                     target_column: '',
                     options: [],
                     is_active: true,
+                    placeholder: '',
                   });
                   setActiveTab('requests');
                   setIsCreating(true);
@@ -655,6 +660,17 @@ export default function AdminPollsPage() {
                     value={requestFormData.description}
                     onChange={(e) => setRequestFormData({ ...requestFormData, description: e.target.value })}
                     className="w-full rounded-xl border border-white/10 bg-zinc-900 py-3 px-4 text-white focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/20 min-h-[80px]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-zinc-400 mb-2">Placeholder Text (Optional)</label>
+                  <input
+                    type="text"
+                    value={requestFormData.placeholder}
+                    onChange={(e) => setRequestFormData({ ...requestFormData, placeholder: e.target.value })}
+                    placeholder="e.g., Enter your size here..."
+                    className="w-full rounded-xl border border-white/10 bg-zinc-900 py-3 px-4 text-white focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/20"
                   />
                 </div>
 
