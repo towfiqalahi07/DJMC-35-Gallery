@@ -104,7 +104,7 @@ export default function HomePage() {
             </div>
 
             <p className="text-base md:text-xl text-zinc-400 max-w-2xl mb-10 md:mb-12 leading-relaxed px-4 md:px-0">
-              Welcome to the official portal for Batch 35. Stay updated with announcements, upcoming events, and access academic resources all in one place.
+              Welcome to the portal for Batch 35. Stay updated with announcements, upcoming events, and access academic resources all in one place.
             </p>
 
             {/* CTA */}
