@@ -33,10 +33,19 @@ export default function HomePage() {
       // Fetch events
       const { data: evData } = await supabase
         .from('events')
-        .select('*')
-        .order('date', { ascending: true })
-        .limit(3);
-      if (evData) setEvents(evData);
+        .select('*');
+        
+      if (evData) {
+        const now = new Date();
+        const upcoming = evData
+          .filter(e => new Date(e.date) >= now)
+          .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        const past = evData
+          .filter(e => new Date(e.date) < now)
+          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+          
+        setEvents([...upcoming, ...past].slice(0, 3));
+      }
     }
     fetchData();
 
