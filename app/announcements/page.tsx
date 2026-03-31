@@ -33,15 +33,24 @@ function AnnouncementsContent() {
         }
       }
 
-      const { data: evData } = await supabase.from('events').select('*').order('date', { ascending: true });
+   const { data: evData } = await supabase.from('events').select('*');
       if (evData) {
-        setEvents(evData);
+        const now = new Date();
+        const upcoming = evData
+          .filter(e => new Date(e.date) >= now)
+          .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        const past = evData
+          .filter(e => new Date(e.date) < now)
+          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+          
+        const sortedEvents = [...upcoming, ...past];
+        setEvents(sortedEvents);
+        
         if (initialId && initialType === 'event') {
-          const item = evData.find(e => e.id === initialId);
+          const item = sortedEvents.find(e => e.id === initialId);
           if (item) setSelectedItem({ ...item, type: 'event' });
         }
       }
-      
       setIsLoading(false);
     }
     fetchData();
