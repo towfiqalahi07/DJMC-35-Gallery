@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { Loader2, CheckCircle2, BarChart3, AlertCircle, Plus, X, ChevronRight } from 'lucide-react';
+import { Loader2, CheckCircle2, BarChart3, AlertCircle, Plus, X, ChevronRight, ShieldAlert } from 'lucide-react';
 import Link from 'next/link';
 
 interface PollOption {
@@ -45,6 +45,7 @@ export default function PollsPage() {
   const [votes, setVotes] = useState<Record<string, Vote[]>>({}); // poll_id -> votes
   const [userVote, setUserVote] = useState<Record<string, string>>({}); // poll_id -> option_id
   const [isLoading, setIsLoading] = useState(true);
+  const [authStatus, setAuthStatus] = useState<'loading' | 'unauthenticated' | 'pending_approval' | 'approved'>('loading');
   const [user, setUser] = useState<any>(null);
   const [submitting, setSubmitting] = useState<string | null>(null);
   const [activeRequest, setActiveRequest] = useState<InfoRequest | null>(null);
@@ -67,9 +68,37 @@ export default function PollsPage() {
       setUser(session?.user ?? null);
 
       if (!session) {
+        setAuthStatus('unauthenticated');
         setIsLoading(false);
         return;
       }
+
+      // Fetch user's profile to check approval status
+      const { data: profileData, error: profileError } = await supabase
+        .from('students')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .maybeSingle();
+
+      if (!profileData) {
+        router.push('/profile');
+        return;
+      }
+
+      setProfile(profileData);
+      setProfileFormData({
+        name: profileData.name || session.user.user_metadata?.full_name || '',
+        phone: profileData.phone || '',
+        class_roll: profileData.class_roll || ''
+      });
+
+      if (!profileData.is_approved) {
+        setAuthStatus('pending_approval');
+        setIsLoading(false);
+        return;
+      }
+
+      setAuthStatus('approved');
 
       // Fetch published polls
       const { data: pollsData, error: pollsError } = await supabase
@@ -78,11 +107,7 @@ export default function PollsPage() {
         .eq('is_published', true)
         .order('created_at', { ascending: false });
 
-      if (pollsError) {
-        console.error('Error fetching polls:', pollsError);
-      } else {
-        setPolls(pollsData || []);
-      }
+      if (!pollsError) setPolls(pollsData || []);
 
       // Fetch active info requests
       const { data: requestsData, error: requestsError } = await supabase
@@ -91,11 +116,7 @@ export default function PollsPage() {
         .or('is_active.eq.true,is_active.is.null')
         .order('created_at', { ascending: false });
 
-      if (requestsError) {
-        console.error('Error fetching info requests:', requestsError);
-      } else {
-        setInfoRequests(requestsData || []);
-      }
+      if (!requestsError) setInfoRequests(requestsData || []);
 
       // Fetch user's collected info
       const { data: infoData, error: infoError } = await supabase
@@ -104,31 +125,7 @@ export default function PollsPage() {
         .eq('user_id', session.user.id)
         .maybeSingle();
 
-      if (!infoError) {
-        setCollectedInfo(infoData);
-      }
-
-      // Fetch user's profile
-      const { data: profileData, error: profileError } = await supabase
-        .from('students')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .maybeSingle();
-
-      if (!profileError && profileData) {
-        setProfile(profileData);
-        setProfileFormData({
-          name: profileData.name || session.user.user_metadata?.full_name || '',
-          phone: profileData.phone || '',
-          class_roll: profileData.class_roll || ''
-        });
-      } else {
-        setProfileFormData({
-          name: session.user.user_metadata?.full_name || '',
-          phone: '',
-          class_roll: ''
-        });
-      }
+      if (!infoError) setCollectedInfo(infoData);
 
       // Fetch votes for these polls
       if (pollsData && pollsData.length > 0) {
@@ -143,14 +140,9 @@ export default function PollsPage() {
           const userVoteMap: Record<string, string> = {};
 
           votesData.forEach(vote => {
-            if (!votesMap[vote.poll_id]) {
-              votesMap[vote.poll_id] = [];
-            }
+            if (!votesMap[vote.poll_id]) votesMap[vote.poll_id] = [];
             votesMap[vote.poll_id].push(vote);
-
-            if (vote.user_id === session.user.id) {
-              userVoteMap[vote.poll_id] = vote.option_id;
-            }
+            if (vote.user_id === session.user.id) userVoteMap[vote.poll_id] = vote.option_id;
           });
 
           setVotes(votesMap);
@@ -162,10 +154,10 @@ export default function PollsPage() {
     }
 
     fetchData();
-  }, []);
+  }, [router]);
 
   const handleVote = async (pollId: string, optionId: string) => {
-    if (!user) return;
+    if (!user || authStatus !== 'approved') return;
     setSubmitting(pollId);
 
     try {
@@ -186,13 +178,10 @@ export default function PollsPage() {
         throw new Error(error.error || 'Failed to vote');
       }
 
-      // Update local state
       setUserVote(prev => ({ ...prev, [pollId]: optionId }));
       
-      // Update votes count
       setVotes(prev => {
         const pollVotes = prev[pollId] || [];
-        // Remove previous vote if exists
         const filteredVotes = pollVotes.filter(v => v.user_id !== user.id);
         return {
           ...prev,
@@ -208,7 +197,7 @@ export default function PollsPage() {
 
   const handleInfoSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !activeRequest) return;
+    if (!user || !activeRequest || authStatus !== 'approved') return;
     setSubmitting(activeRequest.id);
 
     try {
@@ -218,7 +207,6 @@ export default function PollsPage() {
       let finalValue = inputValue;
 
       if (activeRequest.field_type === 'image' && selectedFile) {
-        // Get presigned URL
         const uploadRes = await fetch('/api/upload', {
           method: 'POST',
           headers: {
@@ -238,7 +226,6 @@ export default function PollsPage() {
 
         const { signedUrl, publicUrl } = await uploadRes.json();
 
-        // Upload file to R2
         const s3Res = await fetch(signedUrl, {
           method: 'PUT',
           headers: {
@@ -247,9 +234,7 @@ export default function PollsPage() {
           body: selectedFile,
         });
 
-        if (!s3Res.ok) {
-          throw new Error('Failed to upload image');
-        }
+        if (!s3Res.ok) throw new Error('Failed to upload image');
 
         finalValue = publicUrl;
       }
@@ -272,7 +257,6 @@ export default function PollsPage() {
         throw new Error(error.error || 'Failed to submit info');
       }
 
-      // Update local state
       setCollectedInfo((prev: any) => ({
         ...prev,
         [activeRequest.target_column]: finalValue
@@ -283,7 +267,6 @@ export default function PollsPage() {
       setSelectedFile(null);
       setMessage({ type: 'success', text: 'Information submitted successfully!' });
       
-      // Clear message after 3 seconds
       setTimeout(() => setMessage(null), 3000);
     } catch (error: any) {
       setMessage({ type: 'error', text: error.message });
@@ -311,7 +294,6 @@ export default function PollsPage() {
           name: profileFormData.name,
           phone: profileFormData.phone,
           classRoll: profileFormData.class_roll,
-          // preserve other fields if they exist
           email: profile?.email || session.user.email,
           hscBatch: profile?.hsc_batch,
           college: profile?.college,
@@ -329,7 +311,6 @@ export default function PollsPage() {
         throw new Error(error.error || 'Failed to update profile');
       }
 
-      // Update local state
       setProfile((prev: any) => ({
         ...prev,
         name: profileFormData.name,
@@ -358,11 +339,40 @@ export default function PollsPage() {
     });
   };
 
-  if (isLoading) {
+  if (isLoading || authStatus === 'loading') {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-zinc-500" />
       </div>
+    );
+  }
+
+  if (authStatus === 'unauthenticated' || authStatus === 'pending_approval') {
+    return (
+      <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-4">
+        <div className="w-full max-w-md bg-zinc-900/50 border border-white/10 rounded-3xl p-8 text-center shadow-2xl backdrop-blur-sm">
+          <ShieldAlert className="h-16 w-16 text-amber-500 mx-auto mb-6 opacity-80" />
+          <h2 className="text-2xl font-bold text-white mb-3">
+            {authStatus === 'unauthenticated' ? 'Sign In Required' : 'Approval Pending'}
+          </h2>
+          <p className="text-zinc-400 mb-8 leading-relaxed">
+            {authStatus === 'unauthenticated' 
+              ? 'You must be signed in to participate in polls and submit info requests.' 
+              : 'Your profile is currently under review by the admins. You will be able to vote and submit info once your profile is verified and approved.'}
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            {authStatus === 'unauthenticated' ? (
+              <Link href="/" className="inline-flex items-center justify-center rounded-full bg-white px-8 py-3 text-sm font-bold text-black transition-transform hover:scale-105 active:scale-95">
+                Go to Home
+              </Link>
+            ) : (
+              <Link href="/profile" className="inline-flex items-center justify-center rounded-full bg-white px-8 py-3 text-sm font-bold text-black transition-transform hover:scale-105 active:scale-95">
+                View Profile
+              </Link>
+            )}
+          </div>
+        </div>
+      </main>
     );
   }
 
@@ -386,192 +396,182 @@ export default function PollsPage() {
             Batch P&R
           </h1>
           <p className="text-lg text-zinc-400">
-            Vote on important batch decisions and resolve disputes.
+            Vote on important batch decisions and submit necessary information.
           </p>
         </div>
 
-        {!user ? (
-          <div className="bg-zinc-900/50 border border-white/10 rounded-2xl p-8 text-center">
-            <AlertCircle className="h-12 w-12 text-amber-500 mx-auto mb-4 opacity-80" />
-            <h2 className="text-xl font-bold text-white mb-2">Sign in required</h2>
-            <p className="text-zinc-400 mb-6">You need to be signed in to view and vote on polls.</p>
-            <Link href="/" className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3 text-sm font-bold text-black transition-transform hover:scale-105 active:scale-95">
-              Go to Home
-            </Link>
-          </div>
-        ) : (
-          <div className="space-y-12">
-            {/* Info Requests Section */}
-            {infoRequests.length > 0 && (
-              <section className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <div className="h-1 w-6 bg-blue-500 rounded-full" />
-                    <h2 className="text-sm font-bold text-zinc-400 uppercase tracking-[0.2em]">Info Requests</h2>
+        <div className="space-y-12">
+          {/* Info Requests Section */}
+          {infoRequests.length > 0 && (
+            <section className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="h-1 w-6 bg-blue-500 rounded-full" />
+                  <h2 className="text-sm font-bold text-zinc-400 uppercase tracking-[0.2em]">Info Requests</h2>
+                </div>
+                {infoRequests.length > 3 && (
+                  <div className="flex items-center gap-1 text-[10px] text-zinc-600 font-medium uppercase tracking-wider">
+                    Scroll for more <ChevronRight className="h-3 w-3" />
                   </div>
-                  {infoRequests.length > 3 && (
-                    <div className="flex items-center gap-1 text-[10px] text-zinc-600 font-medium uppercase tracking-wider">
-                      Scroll for more <ChevronRight className="h-3 w-3" />
-                    </div>
-                  )}
-                </div>
-                
-                <div className="flex overflow-x-auto pb-4 gap-4 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0 scroll-smooth">
-                  {infoRequests.map((request) => {
-                    const value = collectedInfo?.[request.target_column];
-                    const isSubmitted = value !== undefined && value !== null && value !== '';
-                    
-                    return (
-                      <button
-                        key={request.id}
-                        onClick={() => {
-                          if (!profile?.name || !profile?.phone || !profile?.class_roll) {
-                            setShowProfileForm(true);
-                            return;
-                          }
-                          setActiveRequest(request);
-                          setInputValue(value || '');
-                          setSelectedFile(null);
-                        }}
-                        className={`flex-none w-[280px] group relative flex flex-col items-start p-5 rounded-2xl border transition-all duration-500 text-left ${
-                          isSubmitted 
-                            ? 'bg-zinc-900/40 border-emerald-500/20 hover:border-emerald-500/40' 
-                            : 'bg-zinc-900/80 border-white/5 hover:border-blue-500/30 hover:bg-zinc-900 shadow-xl shadow-black/20'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between w-full mb-4">
-                          <div className={`p-2 rounded-xl ${isSubmitted ? 'bg-emerald-500/10 text-emerald-400' : 'bg-blue-500/10 text-blue-400'} group-hover:scale-110 transition-transform duration-500`}>
-                            {isSubmitted ? <CheckCircle2 className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-                          </div>
-                          {isSubmitted ? (
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-500/70 bg-emerald-500/5 px-2 py-1 rounded-md">Submitted</span>
-                          ) : (
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-blue-500/70 bg-blue-500/5 px-2 py-1 rounded-md">Pending</span>
-                          )}
-                        </div>
-                        
-                        <h3 className="font-bold text-white mb-1 group-hover:text-blue-400 transition-colors line-clamp-1">{request.title}</h3>
-                        <p className="text-[11px] text-zinc-500 line-clamp-2 mb-4 leading-relaxed">{request.description}</p>
-                        
-                        <div className="mt-auto w-full pt-3 border-t border-white/5 flex items-center justify-between">
-                          {isSubmitted ? (
-                            <div className="flex-1 min-w-0">
-                              <p className="text-[9px] text-zinc-600 uppercase tracking-wider mb-0.5">Your Entry</p>
-                              <p className="text-xs text-zinc-400 truncate font-mono">{value}</p>
-                            </div>
-                          ) : (
-                            <span className="text-xs text-zinc-400 font-medium flex items-center gap-1 group-hover:text-blue-400 transition-colors">
-                              Complete now <ChevronRight className="h-3 w-3" />
-                            </span>
-                          )}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </section>
-            )}
-
-            {/* Polls Section */}
-            <section>
-              <div className="flex items-center gap-2 mb-6">
-                <div className="h-1 w-8 bg-amber-500 rounded-full" />
-                <h2 className="text-xl font-bold text-white uppercase tracking-wider">Active Polls</h2>
+                )}
               </div>
-              {polls.length === 0 ? (
-                <div className="bg-zinc-900/50 border border-white/10 rounded-2xl p-12 text-center">
-                  <BarChart3 className="h-12 w-12 text-zinc-600 mx-auto mb-4" />
-                  <h2 className="text-xl font-bold text-white mb-2">No active polls</h2>
-                  <p className="text-zinc-500">There are currently no published polls to vote on.</p>
-                </div>
-              ) : (
-                <div className="space-y-8">
-                  {polls.map(poll => {
-                    const results = calculateResults(poll.id, poll.options);
-                    const totalVotes = votes[poll.id]?.length || 0;
-                    const hasVoted = !!userVote[poll.id];
-
-                    return (
-                      <div key={poll.id} className="bg-zinc-900/50 border border-white/10 rounded-3xl p-6 sm:p-8">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                          <div>
-                            <h2 className="text-2xl font-bold text-white mb-2">{poll.title}</h2>
-                            {poll.description && <p className="text-zinc-400">{poll.description}</p>}
-                          </div>
-                          <div className="flex items-center gap-3">
-                            {!poll.is_open && (
-                              <span className="px-3 py-1 rounded-full text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20">
-                                Closed
-                              </span>
-                            )}
-                            <span className="px-3 py-1 rounded-full text-xs font-medium bg-zinc-800 text-zinc-300 border border-white/5">
-                              {totalVotes} {totalVotes === 1 ? 'vote' : 'votes'}
-                            </span>
-                          </div>
+              
+              <div className="flex overflow-x-auto pb-4 gap-4 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0 scroll-smooth">
+                {infoRequests.map((request) => {
+                  const value = collectedInfo?.[request.target_column];
+                  const isSubmitted = value !== undefined && value !== null && value !== '';
+                  
+                  return (
+                    <button
+                      key={request.id}
+                      onClick={() => {
+                        // Failsafe check for profile completion
+                        if (!profile?.name || !profile?.phone || !profile?.class_roll) {
+                          setShowProfileForm(true);
+                          return;
+                        }
+                        setActiveRequest(request);
+                        setInputValue(value || '');
+                        setSelectedFile(null);
+                      }}
+                      className={`flex-none w-[280px] group relative flex flex-col items-start p-5 rounded-2xl border transition-all duration-500 text-left ${
+                        isSubmitted 
+                          ? 'bg-zinc-900/40 border-emerald-500/20 hover:border-emerald-500/40' 
+                          : 'bg-zinc-900/80 border-white/5 hover:border-blue-500/30 hover:bg-zinc-900 shadow-xl shadow-black/20'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between w-full mb-4">
+                        <div className={`p-2 rounded-xl ${isSubmitted ? 'bg-emerald-500/10 text-emerald-400' : 'bg-blue-500/10 text-blue-400'} group-hover:scale-110 transition-transform duration-500`}>
+                          {isSubmitted ? <CheckCircle2 className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
                         </div>
-
-                        <div className="space-y-4">
-                          {results.map(opt => {
-                            const isSelected = userVote[poll.id] === opt.id;
-                            
-                            return (
-                              <div key={opt.id} className="relative">
-                                <button
-                                  onClick={() => handleVote(poll.id, opt.id)}
-                                  disabled={!poll.is_open || submitting === poll.id}
-                                  className={`w-full relative overflow-hidden rounded-2xl border text-left transition-all duration-300 ${
-                                    isSelected 
-                                      ? 'border-blue-500 bg-blue-500/10' 
-                                      : 'border-white/10 bg-zinc-900 hover:border-white/20 hover:bg-zinc-800'
-                                  } ${!poll.is_open ? 'cursor-default opacity-80' : ''}`}
-                                >
-                                  {(hasVoted || !poll.is_open) && poll.show_results && (
-                                    <div 
-                                      className={`absolute inset-y-0 left-0 ${isSelected ? 'bg-blue-500/20' : 'bg-white/5'} transition-all duration-1000 ease-out`}
-                                      style={{ width: `${opt.percentage}%` }}
-                                    />
-                                  )}
-                                  
-                                  <div className="relative z-10 flex items-center justify-between p-4 sm:p-5">
-                                    <div className="flex items-center gap-3">
-                                      <div className={`flex h-5 w-5 items-center justify-center rounded-full border ${
-                                        isSelected ? 'border-blue-500 bg-blue-500' : 'border-zinc-600'
-                                      }`}>
-                                        {isSelected && <CheckCircle2 className="h-3.5 w-3.5 text-white" />}
-                                      </div>
-                                      <span className={`font-medium ${isSelected ? 'text-white' : 'text-zinc-300'}`}>
-                                        {opt.text}
-                                      </span>
-                                    </div>
-                                    
-                                    {(hasVoted || !poll.is_open) && poll.show_results && (
-                                      <div className="flex items-center gap-3">
-                                        <span className="text-sm text-zinc-500">{opt.count} votes</span>
-                                        <span className={`font-bold ${isSelected ? 'text-blue-400' : 'text-zinc-400'}`}>
-                                          {opt.percentage}%
-                                        </span>
-                                      </div>
-                                    )}
-                                  </div>
-                                </button>
-                              </div>
-                            );
-                          })}
-                        </div>
-                        
-                        {submitting === poll.id && (
-                          <div className="mt-4 flex items-center justify-center gap-2 text-sm text-zinc-400">
-                            <Loader2 className="h-4 w-4 animate-spin" /> Submitting vote...
-                          </div>
+                        {isSubmitted ? (
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-500/70 bg-emerald-500/5 px-2 py-1 rounded-md">Submitted</span>
+                        ) : (
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-blue-500/70 bg-blue-500/5 px-2 py-1 rounded-md">Pending</span>
                         )}
                       </div>
-                    );
-                  })}
-                </div>
-              )}
+                      
+                      <h3 className="font-bold text-white mb-1 group-hover:text-blue-400 transition-colors line-clamp-1">{request.title}</h3>
+                      <p className="text-[11px] text-zinc-500 line-clamp-2 mb-4 leading-relaxed">{request.description}</p>
+                      
+                      <div className="mt-auto w-full pt-3 border-t border-white/5 flex items-center justify-between">
+                        {isSubmitted ? (
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[9px] text-zinc-600 uppercase tracking-wider mb-0.5">Your Entry</p>
+                            <p className="text-xs text-zinc-400 truncate font-mono">{value}</p>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-zinc-400 font-medium flex items-center gap-1 group-hover:text-blue-400 transition-colors">
+                            Complete now <ChevronRight className="h-3 w-3" />
+                          </span>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </section>
-          </div>
-        )}
+          )}
+
+          {/* Polls Section */}
+          <section>
+            <div className="flex items-center gap-2 mb-6">
+              <div className="h-1 w-8 bg-amber-500 rounded-full" />
+              <h2 className="text-xl font-bold text-white uppercase tracking-wider">Active Polls</h2>
+            </div>
+            {polls.length === 0 ? (
+              <div className="bg-zinc-900/50 border border-white/10 rounded-2xl p-12 text-center">
+                <BarChart3 className="h-12 w-12 text-zinc-600 mx-auto mb-4" />
+                <h2 className="text-xl font-bold text-white mb-2">No active polls</h2>
+                <p className="text-zinc-500">There are currently no published polls to vote on.</p>
+              </div>
+            ) : (
+              <div className="space-y-8">
+                {polls.map(poll => {
+                  const results = calculateResults(poll.id, poll.options);
+                  const totalVotes = votes[poll.id]?.length || 0;
+                  const hasVoted = !!userVote[poll.id];
+
+                  return (
+                    <div key={poll.id} className="bg-zinc-900/50 border border-white/10 rounded-3xl p-6 sm:p-8">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <div>
+                          <h2 className="text-2xl font-bold text-white mb-2">{poll.title}</h2>
+                          {poll.description && <p className="text-zinc-400">{poll.description}</p>}
+                        </div>
+                        <div className="flex items-center gap-3">
+                          {!poll.is_open && (
+                            <span className="px-3 py-1 rounded-full text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20">
+                              Closed
+                            </span>
+                          )}
+                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-zinc-800 text-zinc-300 border border-white/5">
+                            {totalVotes} {totalVotes === 1 ? 'vote' : 'votes'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        {results.map(opt => {
+                          const isSelected = userVote[poll.id] === opt.id;
+                          
+                          return (
+                            <div key={opt.id} className="relative">
+                              <button
+                                onClick={() => handleVote(poll.id, opt.id)}
+                                disabled={!poll.is_open || submitting === poll.id}
+                                className={`w-full relative overflow-hidden rounded-2xl border text-left transition-all duration-300 ${
+                                  isSelected 
+                                    ? 'border-blue-500 bg-blue-500/10' 
+                                    : 'border-white/10 bg-zinc-900 hover:border-white/20 hover:bg-zinc-800'
+                                } ${!poll.is_open ? 'cursor-default opacity-80' : ''}`}
+                              >
+                                {(hasVoted || !poll.is_open) && poll.show_results && (
+                                  <div 
+                                    className={`absolute inset-y-0 left-0 ${isSelected ? 'bg-blue-500/20' : 'bg-white/5'} transition-all duration-1000 ease-out`}
+                                    style={{ width: `${opt.percentage}%` }}
+                                  />
+                                )}
+                                
+                                <div className="relative z-10 flex items-center justify-between p-4 sm:p-5">
+                                  <div className="flex items-center gap-3">
+                                    <div className={`flex h-5 w-5 items-center justify-center rounded-full border ${
+                                      isSelected ? 'border-blue-500 bg-blue-500' : 'border-zinc-600'
+                                    }`}>
+                                      {isSelected && <CheckCircle2 className="h-3.5 w-3.5 text-white" />}
+                                    </div>
+                                    <span className={`font-medium ${isSelected ? 'text-white' : 'text-zinc-300'}`}>
+                                      {opt.text}
+                                    </span>
+                                  </div>
+                                  
+                                  {(hasVoted || !poll.is_open) && poll.show_results && (
+                                    <div className="flex items-center gap-3">
+                                      <span className="text-sm text-zinc-500">{opt.count} votes</span>
+                                      <span className={`font-bold ${isSelected ? 'text-blue-400' : 'text-zinc-400'}`}>
+                                        {opt.percentage}%
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      
+                      {submitting === poll.id && (
+                        <div className="mt-4 flex items-center justify-center gap-2 text-sm text-zinc-400">
+                          <Loader2 className="h-4 w-4 animate-spin" /> Submitting vote...
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        </div>
 
         {/* Info Request Submission Modal */}
         {activeRequest && (
@@ -641,6 +641,7 @@ export default function PollsPage() {
             </div>
           </div>
         )}
+
         {/* Profile Completion Modal */}
         {showProfileForm && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
