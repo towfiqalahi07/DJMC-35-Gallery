@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { getDivision, divisionToDistricts } from '@/lib/bangladesh';
+import { useRouter } from 'next/navigation'; // <-- Import useRouter
 
 interface ProfileProps {
   id: string;
@@ -21,14 +22,45 @@ interface ProfileProps {
 }
 
 export default function DirectoryPage() {
+  const router = useRouter(); // <-- Initialize router
   const [profiles, setProfiles] = useState<ProfileProps[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true); // <-- Add auth loading state
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDivision, setSelectedDivision] = useState<string | null>(null);
 
   useEffect(() => {
-    async function fetchProfiles() {
+    async function checkAuthAndFetch() {
       try {
+        // 1. Check if user is logged in
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          router.push('/');
+          return;
+        }
+
+        // 2. Check if user has a verified profile
+        const { data: userProfile, error: profileError } = await supabase
+          .from('students')
+          .select('id, is_approved')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+
+        if (!userProfile) {
+          // If no profile is found, redirect them to complete verification
+          router.push('/profile');
+          return;
+        }
+
+        // Optional: If you want ONLY admin-approved users to view the directory, uncomment this:
+        // if (!userProfile.is_approved) {
+        //   router.push('/profile');
+        //   return;
+        // }
+
+        setIsCheckingAuth(false);
+
+        // 3. Fetch directory profiles if authorized
         const { data, error } = await supabase
           .from('students')
           .select('*')
@@ -59,8 +91,17 @@ export default function DirectoryPage() {
       }
     }
 
-    fetchProfiles();
-  }, []);
+    checkAuthAndFetch();
+  }, [router]);
+
+  // Show a full-screen loader while checking auth to prevent content flashing
+  if (isCheckingAuth) {
+    return (
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-zinc-500" />
+      </div>
+    );
+  }
 
   const filteredProfiles = profiles.filter(profile => {
     const matchesSearch = 
