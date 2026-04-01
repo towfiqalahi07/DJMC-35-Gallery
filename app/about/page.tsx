@@ -327,7 +327,7 @@ export default function AboutPage() {
                       <Users className="h-6 w-6" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-zinc-400">Total Students</p>
+                      <p className="text-sm font-medium text-zinc-400">Registered Here</p>
                       <p className="text-2xl font-bold text-white">{totalStudents}</p>
                     </div>
                   </div>
