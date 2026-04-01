@@ -14,6 +14,7 @@ export default function ProfilePage() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [isPhoneVerified, setIsPhoneVerified] = useState(false);
   const [showOtpInput, setShowOtpInput] = useState(false);
+  const [showClassRollPopup, setShowClassRollPopup] = useState(false); // <--- Added State
   const [otp, setOtp] = useState('');
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
@@ -43,7 +44,6 @@ export default function ProfilePage() {
       }
       setUser(session.user);
       
-      // Fetch profile from API route
       const { data: { session: currentSession } } = await supabase.auth.getSession();
       
       const res = await fetch('/api/profile', {
@@ -69,6 +69,11 @@ export default function ProfilePage() {
             facebook: studentData.facebook || '',
             classRoll: studentData.class_roll || '',
           });
+
+          // <--- Show popup if approved but missing class roll
+          if (studentData.is_approved && !studentData.class_roll) {
+            setShowClassRollPopup(true);
+          }
         } else {
           setFormData(prev => ({
             ...prev,
@@ -86,7 +91,6 @@ export default function ProfilePage() {
     if (!formData.phone) return;
     setIsLoading(true);
     
-    // Check if phone exists via API
     const { data: { session } } = await supabase.auth.getSession();
     const res = await fetch('/api/profile/check-phone', {
       method: 'POST',
@@ -100,10 +104,9 @@ export default function ProfilePage() {
     const { data } = await res.json();
 
    if (data && !data.user_id) {
-      // Autofill data
       setFormData(prev => ({
         ...prev,
-        name: data.name || prev.name, // <--- ADD THIS LINE
+        name: data.name || prev.name,
         hscBatch: data.hsc_batch || '',
         college: data.college || '',
         bloodGroup: data.blood_group || '',
@@ -118,7 +121,6 @@ export default function ProfilePage() {
     } else if (data && data.user_id) {
       setMessage({ type: 'error', text: 'This phone number is already linked to another account.' });
     } else {
-      // Phone not found, trigger OTP
       await sendOtp(formData.phone);
     }
     setIsLoading(false);
@@ -195,7 +197,6 @@ export default function ProfilePage() {
         throw new Error(data.error || 'Failed to update');
       }
 
-      // Refresh profile state
       const profileRes = await fetch('/api/profile', {
         headers: {
           'Authorization': `Bearer ${session?.access_token}`
@@ -253,7 +254,6 @@ export default function ProfilePage() {
         throw new Error(data.error || 'Failed to save profile');
       }
 
-      // Refresh profile state
       const profileRes = await fetch('/api/profile', {
         headers: {
           'Authorization': `Bearer ${session?.access_token}`
@@ -282,7 +282,7 @@ export default function ProfilePage() {
 
   return (
     <>
-      <main className="flex-1 max-w-3xl mx-auto w-full px-4 py-12">
+      <main className="flex-1 max-w-3xl mx-auto w-full px-4 py-12 relative">
         <div className="mb-8 flex items-center gap-6">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={profile?.photo_url || user?.user_metadata.avatar_url} alt="Profile" className="w-24 h-24 rounded-full border-4 border-zinc-800 shadow-xl" />
@@ -453,7 +453,7 @@ export default function ProfilePage() {
                         className="flex-1 rounded-xl border border-white/10 bg-zinc-900 py-2 px-3 text-white focus:border-white/20 focus:outline-none"
                         placeholder="Enter your class roll"
                       />
-                      <button onClick={() => handleInlineSave('class_roll')} disabled={isSaving} className="p-2 bg-emerald-500/20 text-emerald-400 rounded-xl hover:bg-emerald-500/30">
+                      <button onClick={() => handleInlineSave('class_roll')} disabled={isSaving || !formData.classRoll} className="p-2 bg-emerald-500/20 text-emerald-400 rounded-xl hover:bg-emerald-500/30">
                         {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
                       </button>
                       <button onClick={() => {
@@ -610,12 +610,13 @@ export default function ProfilePage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-zinc-400 mb-2">Class Roll <span className="text-xs text-zinc-500">(Optional for now)</span></label>
+                <label className="block text-sm font-medium text-zinc-400 mb-2">Class Roll</label>
                 <input
                   type="text"
                   value={formData.classRoll}
                   onChange={(e) => setFormData({ ...formData, classRoll: e.target.value })}
                   className="w-full rounded-xl border border-white/10 bg-zinc-900 py-3 px-4 text-white focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/20"
+                  required
                 />
               </div>
               
@@ -643,7 +644,7 @@ export default function ProfilePage() {
             <div className="pt-4 border-t border-white/5 flex justify-end">
               <button
                 type="submit"
-                disabled={isSaving}
+                disabled={isSaving || !formData.classRoll}
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-8 py-3 text-sm font-bold text-black transition-transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Save Profile'}
@@ -652,6 +653,32 @@ export default function ProfilePage() {
           </form>
         )}
       </main>
+
+      {/* Class Roll Action Required Popup */}
+      {showClassRollPopup && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-zinc-900 border border-white/10 rounded-3xl p-8 w-full max-w-md shadow-2xl text-center">
+            <div className="mx-auto w-16 h-16 bg-blue-500/10 text-blue-400 rounded-full flex items-center justify-center mb-6">
+              <GraduationCap className="w-8 h-8" />
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-2">Action Required</h2>
+            <p className="text-zinc-400 mb-6">
+              We've updated our system to require Class Rolls. Please edit your Class Roll below so you can continue using all features.
+            </p>
+            <button 
+              onClick={() => {
+                setShowClassRollPopup(false);
+                setEditingField('class_roll');
+                // Scroll to academic identity section smoothly
+                window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+              }} 
+              className="inline-flex items-center justify-center w-full rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white transition-transform hover:bg-blue-500"
+            >
+              Update Class Roll Now
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 }
