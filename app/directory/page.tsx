@@ -14,7 +14,7 @@ interface ProfileProps {
   photoUrl: string;
   district: string;
   hscBatch: string;
-  admissionRoll: string;
+  classRoll: string; // <-- Changed to match the new component prop
   bloodGroup: string;
   college: string;
   whatsapp?: string;
@@ -80,7 +80,7 @@ export default function DirectoryPage() {
             photoUrl: student.photo_url,
             district: student.district,
             hscBatch: student.hsc_batch,
-            admissionRoll: student.admission_roll,
+            classRoll: student.class_roll, // <-- Pass class_roll instead of admission_roll
             bloodGroup: student.blood_group,
             college: student.college,
             whatsapp: student.whatsapp,
@@ -138,7 +138,7 @@ export default function DirectoryPage() {
   const filteredProfiles = profiles.filter(profile => {
     const matchesSearch = 
       profile.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      profile.admissionRoll?.includes(searchQuery) ||
+      profile.classRoll?.includes(searchQuery) || // <-- Allow searching by classRoll
       profile.district.toLowerCase().includes(searchQuery.toLowerCase());
       
     const matchesDivision = selectedDivision ? getDivision(profile.district) === selectedDivision : true;
