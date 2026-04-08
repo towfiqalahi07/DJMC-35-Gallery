@@ -28,6 +28,7 @@ export async function GET(req: Request) {
       district: student.district,
       hscBatch: student.hsc_batch,
       admissionRoll: student.admission_roll,
+      classRoll: student.class_roll, // <-- ADD THIS LINE
       bloodGroup: student.blood_group,
       college: student.college,
       phone: student.phone,
