@@ -13,6 +13,7 @@ interface ProfileProps {
   district: string;
   hscBatch: string;
   admissionRoll: string;
+  classRoll: string;
   bloodGroup: string;
   college: string;
   phone: string;
@@ -346,7 +347,7 @@ export default function AdminPage() {
                   <h3 className="text-lg font-semibold text-white">{profile.name}</h3>
                   <div className="text-sm text-zinc-400 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
                     <p>Phone: <span className="text-zinc-300">{profile.phone}</span></p>
-                    <p>Roll: <span className="text-zinc-300">{profile.admissionRoll}</span></p>
+                    <p>Roll: <span className="text-zinc-300">{profile.classRoll}</span></p>
                     <p>College: <span className="text-zinc-300">{profile.college}</span></p>
                     <p>District: <span className="text-zinc-300">{profile.district}</span></p>
                   </div>
@@ -456,8 +457,7 @@ export default function AdminPage() {
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img src={img.url} alt="Gallery image" className="object-cover w-full h-full" />
                               
-                              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                                <div 
+<div className="absolute inset-0 bg-black/40 md:bg-black/60 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">                                <div 
                                   {...provided.dragHandleProps}
                                   className="h-10 w-10 rounded-full bg-white/20 text-white flex items-center justify-center hover:bg-white/40 transition-colors cursor-grab active:cursor-grabbing"
                                   title="Drag to reorder"
