@@ -11,8 +11,27 @@ const hindSiliguri = Hind_Siliguri({
 });
 
 export const metadata: Metadata = {
-  title: "DJMC '35 Batch Directory",
-  description: "The unofficial database for DjMC Batch 35. Find your batchmates, explore districts, and stay connected.",
+  title: {
+    template: '%s | DjMC-35 Portal',
+    default: 'DjMC-35 Portal | Dinajpur Medical College', // Fallback
+  },
+  description: 'The unofficial batch portal and directory for the 35th batch of Dinajpur Medical College.',
+  keywords: ['DjMC', 'Dinajpur Medical College', 'Batch 35', 'Medical Students Bangladesh', 'DjMC-35'],
+  openGraph: {
+    title: 'DjMC-35 Batch Portal',
+    description: 'Connect with the 35th batch of Dinajpur Medical College.',
+    url: 'https://djmc35.pages.dev',
+    siteName: 'DjMC-35 Portal',
+    images: [
+      {
+        url: 'https://djmc35.pages.dev/og-image.png', // Add a nice preview image to your public folder
+        width: 1200,
+        height: 630,
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
+  },
   other: { 'google-site-verification': 'P1_TDoHWByQWvuBzG_iSP4PJouqX94d5L9qjmTY2iTU' },
 };
 
