@@ -1,4 +1,4 @@
-import type {Metadata} from 'next';
+import type { Metadata } from 'next';
 import { Hind_Siliguri } from 'next/font/google';
 import './globals.css'; // Global styles
 import Footer from '@/components/Footer';
@@ -16,6 +16,7 @@ export const metadata: Metadata = {
     default: 'DjMC-35 Portal | Dinajpur Medical College', // Fallback
   },
   description: 'The unofficial batch portal and directory for the 35th batch of Dinajpur Medical College.',
+  applicationName: 'DjMC-35 Portal', // Added to reinforce site name
   keywords: ['DjMC', 'Dinajpur Medical College', 'Batch 35', 'Medical Students Bangladesh', 'DjMC-35'],
   openGraph: {
     title: 'DjMC-35 Batch Portal',
@@ -36,8 +37,24 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({children}: {children: React.ReactNode}) {
+  // Website Schema (JSON-LD) to explicitly define the site name for search engines
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "DjMC-35 Portal",
+    "alternateName": ["Dinajpur Medical College Batch 35", "DjMC 35"],
+    "url": "https://djmc35.pages.dev/"
+  };
+
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Inject Structured Data */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </head>
       <body className={`${hindSiliguri.variable} font-sans min-h-screen flex flex-col bg-black text-zinc-300`} suppressHydrationWarning>
         <Header />
         <main className="flex-1 flex flex-col">
