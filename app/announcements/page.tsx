@@ -157,11 +157,11 @@ function AnnouncementsContent() {
               <div 
                 key={event.id} 
                 onClick={() => setSelectedItem({ ...event, type: 'event', parsedTitle: title, parsedTag: tag })}
-                className="group relative overflow-hidden rounded-3xl bg-zinc-900/40 border border-white/10 flex flex-col sm:flex-row cursor-pointer hover:border-purple-500/30 transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-purple-500/10"
+                className="group relative overflow-hidden rounded-3xl bg-zinc-900/40 border border-white/10 flex flex-col sm:flex-row sm:items-center cursor-pointer hover:border-purple-500/30 transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-purple-500/10"
               >
                 {event.cover_photo_url ? (
-                  <div className="w-full sm:w-2/5 md:w-1/3 h-56 sm:h-auto relative overflow-hidden shrink-0">
-                    <img src={event.cover_photo_url} alt={title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                  <div className="w-full sm:w-[300px] md:w-[340px] h-56 sm:h-[220px] relative overflow-hidden shrink-0">
+                    <img src={event.cover_photo_url} alt={title} className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105" />
                     <div className="absolute inset-0 bg-gradient-to-t sm:bg-gradient-to-r from-zinc-900/90 sm:from-zinc-900/50 to-transparent"></div>
                     
                     <div className="absolute top-4 left-4 flex flex-col items-center justify-center w-14 h-16 rounded-2xl bg-black/50 backdrop-blur-md border border-white/10 text-white shadow-xl">
@@ -170,7 +170,7 @@ function AnnouncementsContent() {
                     </div>
                   </div>
                 ) : (
-                  <div className="hidden sm:flex flex-col items-center justify-center w-32 bg-gradient-to-br from-purple-900/20 to-zinc-900/50 border-r border-white/5 shrink-0">
+                  <div className="hidden sm:flex flex-col items-center justify-center w-32 sm:h-[220px] bg-gradient-to-br from-purple-900/20 to-zinc-900/50 border-r border-white/5 shrink-0">
                     <span className="text-sm font-bold uppercase tracking-widest text-purple-400">{new Date(event.date).toLocaleString('default', { month: 'short' })}</span>
                     <span className="text-4xl font-bold text-white mt-1">{new Date(event.date).getDate()}</span>
                   </div>
