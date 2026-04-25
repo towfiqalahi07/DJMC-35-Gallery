@@ -251,14 +251,14 @@ export default function HomePage() {
                         <div className="w-full h-48 relative overflow-hidden">
                           <img src={event.cover_photo_url} alt={title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                           <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/20 to-transparent"></div>
-                          <div className="absolute top-4 left-4 flex flex-col items-center justify-center w-12 h-14 rounded-2xl bg-black/40 backdrop-blur-md border border-white/10 text-white shadow-xl">
+                          <div className="absolute top-4 right-4 flex flex-col items-center justify-center w-12 h-14 rounded-2xl bg-black/40 backdrop-blur-md border border-white/10 text-white shadow-xl">
                             <span className="text-[10px] font-bold uppercase tracking-widest text-purple-300">{new Date(event.date).toLocaleString('default', { month: 'short' })}</span>
                             <span className="text-xl font-bold leading-none">{new Date(event.date).getDate()}</span>
                           </div>
                         </div>
                       ) : (
                         <div className="w-full h-32 relative overflow-hidden bg-gradient-to-br from-purple-900/20 to-zinc-900">
-                           <div className="absolute top-4 left-4 flex flex-col items-center justify-center w-12 h-14 rounded-2xl bg-black/40 backdrop-blur-md border border-white/10 text-white shadow-xl">
+                           <div className="absolute top-4 right-4 flex flex-col items-center justify-center w-12 h-14 rounded-2xl bg-black/40 backdrop-blur-md border border-white/10 text-white shadow-xl">
                             <span className="text-[10px] font-bold uppercase tracking-widest text-purple-300">{new Date(event.date).toLocaleString('default', { month: 'short' })}</span>
                             <span className="text-xl font-bold leading-none">{new Date(event.date).getDate()}</span>
                           </div>
