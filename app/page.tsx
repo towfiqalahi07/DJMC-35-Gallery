@@ -246,43 +246,48 @@ export default function HomePage() {
                     title = match[2];
                   }
                   return (
+                  
                     <Link key={event.id} href={`/announcements?id=${event.id}&type=event`} className="group relative block overflow-hidden rounded-3xl bg-zinc-900/40 border border-white/10 hover:border-purple-500/30 transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-purple-500/10">
-                      {event.cover_photo_url ? (
-                        <div className="w-full h-48 relative overflow-hidden">
-                          <img src={event.cover_photo_url} alt={title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                          <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/20 to-transparent"></div>
-                          <div className="absolute top-4 right-4 flex flex-col items-center justify-center w-12 h-14 rounded-2xl bg-black/40 backdrop-blur-md border border-white/10 text-white shadow-xl">
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-purple-300">{new Date(event.date).toLocaleString('default', { month: 'short' })}</span>
-                            <span className="text-xl font-bold leading-none">{new Date(event.date).getDate()}</span>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="w-full h-32 relative overflow-hidden bg-gradient-to-br from-purple-900/20 to-zinc-900">
-                           <div className="absolute top-4 right-4 flex flex-col items-center justify-center w-12 h-14 rounded-2xl bg-black/40 backdrop-blur-md border border-white/10 text-white shadow-xl">
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-purple-300">{new Date(event.date).toLocaleString('default', { month: 'short' })}</span>
-                            <span className="text-xl font-bold leading-none">{new Date(event.date).getDate()}</span>
-                          </div>
-                        </div>
-                      )}
-                      
-                      <div className={`p-6 ${event.cover_photo_url ? 'pt-2' : 'pt-4'}`}>
-                        <div className="flex items-center gap-2 mb-3">
-                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider ${
-                            tag === 'Cancelled' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
-                            tag === 'Delayed' ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20' :
-                            tag === 'Past' ? 'bg-zinc-500/10 text-zinc-400 border border-zinc-500/20' :
-                            'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                          }`}>
-                            {tag}
-                          </span>
-                        </div>
-                        <h4 className="text-lg font-bold text-white group-hover:text-purple-300 transition-colors mb-2 line-clamp-1">{title}</h4>
-                        <div className="flex items-center gap-2 text-sm text-zinc-400">
-                          <MapPin className="h-4 w-4 text-purple-400/70" />
-                          <span className="truncate">{event.location || 'TBA'}</span>
-                        </div>
-                      </div>
-                    </Link>
+  
+  {/* STRICT MEDIA BLOCK: Fixed height of 10rem (h-40) for EVERYTHING */}
+  <div className="relative w-full h-40 overflow-hidden bg-zinc-950 border-b border-white/5">
+    {event.cover_photo_url ? (
+      <>
+        <img src={event.cover_photo_url} alt={title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+        <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/20 to-transparent"></div>
+      </>
+    ) : (
+      <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-zinc-900 to-zinc-950 flex items-center justify-center">
+         <Calendar className="w-12 h-12 text-purple-500/10 transition-transform duration-700 group-hover:scale-110" />
+      </div>
+    )}
+    
+    {/* DATE BADGE: Locked to Top-Right */}
+    <div className="absolute top-4 right-4 flex flex-col items-center justify-center w-12 h-14 rounded-2xl bg-black/60 backdrop-blur-md border border-white/10 text-white shadow-xl z-10">
+      <span className="text-[10px] font-bold uppercase tracking-widest text-purple-300">{new Date(event.date).toLocaleString('default', { month: 'short' })}</span>
+      <span className="text-xl font-bold leading-none">{new Date(event.date).getDate()}</span>
+    </div>
+  </div>
+  
+  {/* CONTENT BLOCK */}
+  <div className="p-6">
+    <div className="flex items-center gap-2 mb-3">
+      <span className={`px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider ${
+        tag === 'Cancelled' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
+        tag === 'Delayed' ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20' :
+        tag === 'Past' ? 'bg-zinc-500/10 text-zinc-400 border border-zinc-500/20' :
+        'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+      }`}>
+        {tag}
+      </span>
+    </div>
+    <h4 className="text-lg font-bold text-white group-hover:text-purple-300 transition-colors mb-2 line-clamp-1">{title}</h4>
+    <div className="flex items-center gap-2 text-sm text-zinc-400">
+      <MapPin className="h-4 w-4 text-purple-400/70 shrink-0" />
+      <span className="truncate">{event.location || 'TBA'}</span>
+    </div>
+  </div>
+</Link>
                   );
                 }) : (
                   <div className="p-8 text-center rounded-2xl bg-zinc-900/30 border border-white/5 border-dashed">
