@@ -16,6 +16,7 @@ interface Poll {
   is_published: boolean;
   is_open: boolean;
   show_results: boolean;
+  audience?: string;
   created_at: string;
 }
 
@@ -55,6 +56,7 @@ export default function AdminPollsPage() {
     is_published: false,
     is_open: true,
     show_results: false,
+    audience: 'everyone',
   });
 
   const [requestFormData, setRequestFormData] = useState({
@@ -174,6 +176,7 @@ export default function AdminPollsPage() {
         is_published: false,
         is_open: true,
         show_results: false,
+        audience: 'everyone',
       });
       setMessage({ type: 'success', text: editingPoll ? 'Poll updated successfully!' : 'Poll created successfully!' });
       setTimeout(() => setMessage(null), 3000);
@@ -270,6 +273,7 @@ export default function AdminPollsPage() {
       is_published: poll.is_published,
       is_open: poll.is_open,
       show_results: poll.show_results || false,
+      audience: poll.audience || 'everyone',
     });
     setIsCreating(true);
   };
@@ -458,6 +462,7 @@ export default function AdminPollsPage() {
                     is_published: false,
                     is_open: true,
                     show_results: false,
+                    audience: 'everyone',
                   });
                   setActiveTab('polls');
                   setIsCreating(true);
@@ -542,6 +547,22 @@ export default function AdminPollsPage() {
                     onChange={(e) => setPollFormData({ ...pollFormData, description: e.target.value })}
                     className="w-full rounded-xl border border-white/10 bg-zinc-900 py-3 px-4 text-white focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/20 min-h-[100px]"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-zinc-400 mb-2">Target Audience</label>
+                  <select
+                    value={pollFormData.audience}
+                    onChange={(e) => setPollFormData({ ...pollFormData, audience: e.target.value })}
+                    className="w-full rounded-xl border border-white/10 bg-zinc-900 py-3 px-4 text-white focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/20"
+                  >
+                    <option value="everyone">Everyone</option>
+                    <option value="section_a">Section A (Roll 1-67)</option>
+                    <option value="section_b">Section B (Roll 68-134)</option>
+                    <option value="section_c">Section C (Roll 135-200)</option>
+                    <option value="group_a">Group A (Roll 1-100)</option>
+                    <option value="group_b">Group B (Roll 101-200)</option>
+                  </select>
                 </div>
 
                 <div>
@@ -788,7 +809,7 @@ export default function AdminPollsPage() {
                       </div>
 
                       <div className="text-sm text-zinc-500">
-                        {poll.options.length} options • Created {new Date(poll.created_at).toLocaleDateString()}
+                        {poll.options.length} options • Created {new Date(poll.created_at).toLocaleDateString()} • Target: {poll.audience || 'everyone'}
                       </div>
                     </div>
                     
