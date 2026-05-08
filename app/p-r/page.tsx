@@ -19,6 +19,7 @@ interface Poll {
   is_published: boolean;
   is_open: boolean;
   show_results: boolean;
+  audience?: string;
   created_at: string;
 }
 
@@ -37,6 +38,15 @@ interface Vote {
   option_id: string;
   user_id: string;
 }
+
+const AUDIENCE_LABELS: Record<string, string> = {
+  'everyone': 'Everyone',
+  'section_a': 'Section A (Roll 1-67)',
+  'section_b': 'Section B (Roll 68-134)',
+  'section_c': 'Section C (Roll 135-200)',
+  'group_a': 'Group A (Roll 1-100)',
+  'group_b': 'Group B (Roll 101-200)'
+};
 
 export default function PollsPage() {
   const [polls, setPolls] = useState<Poll[]>([]);
@@ -158,6 +168,31 @@ export default function PollsPage() {
 
   const handleVote = async (pollId: string, optionId: string) => {
     if (!user || authStatus !== 'approved') return;
+
+    // Local eligibility check
+    const poll = polls.find(p => p.id === pollId);
+    if (poll && poll.audience && poll.audience !== 'everyone') {
+      const roll = parseInt(profile?.class_roll || '0', 10);
+      let isEligible = true;
+
+      switch(poll.audience) {
+        case 'section_a': isEligible = roll >= 1 && roll <= 67; break;
+        case 'section_b': isEligible = roll >= 68 && roll <= 134; break;
+        case 'section_c': isEligible = roll >= 135 && roll <= 200; break;
+        case 'group_a': isEligible = roll >= 1 && roll <= 100; break;
+        case 'group_b': isEligible = roll >= 101 && roll <= 200; break;
+      }
+
+      if (!isEligible) {
+        setMessage({ 
+          type: 'error', 
+          text: `This poll is restricted to ${AUDIENCE_LABELS[poll.audience]}. Your vote will not be counted.` 
+        });
+        setTimeout(() => setMessage(null), 4000);
+        return;
+      }
+    }
+
     setSubmitting(pollId);
 
     try {
@@ -497,7 +532,13 @@ export default function PollsPage() {
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                         <div>
                           <h2 className="text-2xl font-bold text-white mb-2">{poll.title}</h2>
-                          {poll.description && <p className="text-zinc-400">{poll.description}</p>}
+                          {poll.description && <p className="text-zinc-400 mb-2">{poll.description}</p>}
+                          
+                          <div className="inline-flex items-center mt-1">
+                            <span className="px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                              Target: {AUDIENCE_LABELS[poll.audience || 'everyone'] || 'Everyone'}
+                            </span>
+                          </div>
                         </div>
                         <div className="flex items-center gap-3">
                           {!poll.is_open && (
