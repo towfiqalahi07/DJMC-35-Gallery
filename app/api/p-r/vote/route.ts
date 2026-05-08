@@ -27,10 +27,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing poll_id or option_id' }, { status: 400 });
     }
 
-    // Check if poll is open and published
+    // Check if poll is open, published, and fetch audience
     const { data: poll, error: pollError } = await supabaseAdmin
       .from('polls')
-      .select('is_open, is_published')
+      .select('is_open, is_published, audience')
       .eq('id', poll_id)
       .single();
 
@@ -40,6 +40,30 @@ export async function POST(req: Request) {
 
     if (!poll.is_published || !poll.is_open) {
       return NextResponse.json({ error: 'Poll is closed or not published' }, { status: 403 });
+    }
+
+    // Verify target audience based on class_roll
+    if (poll.audience && poll.audience !== 'everyone') {
+      const { data: student } = await supabaseAdmin
+        .from('students')
+        .select('class_roll')
+        .eq('user_id', user.id)
+        .single();
+        
+      const roll = parseInt(student?.class_roll || '0', 10);
+      let isEligible = true;
+
+      switch(poll.audience) {
+        case 'section_a': isEligible = roll >= 1 && roll <= 67; break;
+        case 'section_b': isEligible = roll >= 68 && roll <= 134; break;
+        case 'section_c': isEligible = roll >= 135 && roll <= 200; break;
+        case 'group_a': isEligible = roll >= 1 && roll <= 100; break;
+        case 'group_b': isEligible = roll >= 101 && roll <= 200; break;
+      }
+
+      if (!isEligible) {
+        return NextResponse.json({ error: 'This poll is restricted. Your vote will not be counted.' }, { status: 403 });
+      }
     }
 
     // Check if user already voted
