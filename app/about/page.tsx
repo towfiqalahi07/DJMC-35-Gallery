@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { MapPin, Users, Calendar, GraduationCap, Globe, ChevronLeft, ChevronRight, Droplets, Loader2 } from 'lucide-react';
+import { MapPin, Users, Calendar, GraduationCap, Globe, ChevronLeft, ChevronRight, Droplets, Loader2, Phone, MessageCircle } from 'lucide-react';
 import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay';
 import dynamic from 'next/dynamic';
@@ -292,14 +292,30 @@ export default function AboutPage() {
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src={cr.photo_url} alt={cr.name} className="object-cover w-full h-full" />
                           </div>
-                          <div>
+                          <div className="flex-1">
                             <h3 className="text-xl font-bold text-white">{cr.name}</h3>
-                            <p className={`${gender === 'Male' ? 'text-blue-400' : 'text-pink-400'} text-sm font-medium mb-2`}>
+                            <p className={`${gender === 'Male' ? 'text-blue-400' : 'text-pink-400'} text-sm font-medium mb-3`}>
                               Class Representative ({gender})
                             </p>
-                            <div className="text-zinc-400 text-sm space-y-1">
-                              <p className="flex items-center gap-2">📞 {cr.phone}</p>
-                              {cr.whatsapp && <p className="flex items-center gap-2">💬 WA: {cr.whatsapp}</p>}
+                            
+                            {/* Contact Buttons */}
+                            <div className="flex gap-2">
+                              <a 
+                                href={`tel:${cr.phone}`} 
+                                className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-medium rounded-lg transition-colors border border-white/5"
+                              >
+                                <Phone className="w-3.5 h-3.5" /> Call
+                              </a>
+                              {cr.whatsapp && (
+                                <a 
+                                  href={`https://wa.me/${cr.whatsapp.replace(/\D/g, '')}`} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer" 
+                                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-xs font-medium rounded-lg transition-colors border border-emerald-500/20"
+                                >
+                                  <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
+                                </a>
+                              )}
                             </div>
                           </div>
                         </div>
