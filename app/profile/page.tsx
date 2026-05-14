@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
-import { User, Mail, Phone, Loader2, CheckCircle2, AlertCircle, Edit2, X, Globe, GraduationCap } from 'lucide-react';
+import { User, Mail, Phone, Loader2, CheckCircle2, AlertCircle, Edit2, X, Globe, GraduationCap, Camera } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function ProfilePage() {
@@ -10,16 +10,19 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false); // <--- Added State for photo upload
   const [editingField, setEditingField] = useState<'whatsapp' | 'facebook' | 'class_roll' | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [isPhoneVerified, setIsPhoneVerified] = useState(false);
   const [showOtpInput, setShowOtpInput] = useState(false);
-  const [showClassRollPopup, setShowClassRollPopup] = useState(false); // <--- Added State
+  const [showClassRollPopup, setShowClassRollPopup] = useState(false);
   const [otp, setOtp] = useState('');
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const [expectedOtp, setExpectedOtp] = useState('');
   const router = useRouter();
+  
+  const fileInputRef = useRef<HTMLInputElement>(null); // <--- Reference for the hidden file input
 
   const [formData, setFormData] = useState({
     name: '',
@@ -70,7 +73,6 @@ export default function ProfilePage() {
             classRoll: studentData.class_roll || '',
           });
 
-          // <--- Show popup if approved but missing class roll
           if (studentData.is_approved && !studentData.class_roll) {
             setShowClassRollPopup(true);
           }
@@ -86,6 +88,87 @@ export default function ProfilePage() {
     }
     fetchUser();
   }, [router]);
+
+  // --- Start Photo Upload Logic ---
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Check file size (1MB limit)
+    if (file.size > 1024 * 1024) {
+      setMessage({ type: 'error', text: 'Photo must be less than 1MB.' });
+      if (fileInputRef.current) fileInputRef.current.value = ''; // Reset input
+      return;
+    }
+
+    setIsUploadingPhoto(true);
+    setMessage(null);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      // 1. Get presigned URL from existing API
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`
+        },
+        body: JSON.stringify({ filename: file.name, contentType: file.type })
+      });
+
+      if (!res.ok) throw new Error('Failed to get upload URL');
+      const { signedUrl, publicUrl } = await res.json();
+
+      // 2. Upload directly to Cloudflare R2 bucket
+      const uploadRes = await fetch(signedUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': file.type,
+        },
+        body: file
+      });
+
+      if (!uploadRes.ok) throw new Error('Failed to upload photo to storage');
+
+      // 3. Update the database profile with the new public photo URL
+      const payload = {
+        name: profile?.name || formData.name,
+        email: profile?.email || formData.email,
+        phone: profile?.phone || formData.phone,
+        hscBatch: profile?.hsc_batch || formData.hscBatch,
+        college: profile?.college || formData.college,
+        bloodGroup: profile?.blood_group || formData.bloodGroup,
+        admissionRoll: profile?.admission_roll || formData.admissionRoll,
+        district: profile?.district || formData.district,
+        whatsapp: profile?.whatsapp || formData.whatsapp,
+        facebook: profile?.facebook || formData.facebook,
+        classRoll: profile?.class_roll || formData.classRoll,
+        photo_url: publicUrl,
+      };
+
+      const updateRes = await fetch('/api/profile', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!updateRes.ok) throw new Error('Failed to update profile record');
+
+      setProfile((prev: any) => ({ ...prev, photo_url: publicUrl }));
+      setMessage({ type: 'success', text: 'Profile photo updated successfully!' });
+
+    } catch (error: any) {
+      setMessage({ type: 'error', text: error.message || 'Failed to update photo.' });
+    } finally {
+      setIsUploadingPhoto(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+  // --- End Photo Upload Logic ---
 
   const handlePhoneCheck = async () => {
     if (!formData.phone) return;
@@ -284,23 +367,45 @@ export default function ProfilePage() {
     <>
       <main className="flex-1 max-w-3xl mx-auto w-full px-4 py-12 relative">
         <div className="mb-8 flex items-center gap-6">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={profile?.photo_url || user?.user_metadata.avatar_url} alt="Profile" className="w-24 h-24 rounded-full border-4 border-zinc-800 shadow-xl" />
-          <div>
-            <h1 className="text-3xl font-bold text-white">{formData.name}</h1>
-            <p className="text-zinc-400">{formData.email}</p>
+          {/* Profile Photo with Upload Overlay */}
+          <div className="relative inline-block group shrink-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img 
+              src={profile?.photo_url || user?.user_metadata.avatar_url} 
+              alt="Profile" 
+              className="w-24 h-24 rounded-full border-4 border-zinc-800 shadow-xl object-cover" 
+            />
+            <div 
+              onClick={() => !isUploadingPhoto && fileInputRef.current?.click()}
+              className={`absolute inset-0 bg-black/60 rounded-full flex items-center justify-center transition-opacity cursor-pointer ${isUploadingPhoto ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+              title="Update photo (Max 1MB)"
+            >
+              {isUploadingPhoto ? <Loader2 className="w-6 h-6 text-white animate-spin" /> : <Camera className="w-6 h-6 text-white" />}
+            </div>
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              onChange={handlePhotoUpload} 
+              accept="image/*" 
+              className="hidden" 
+            />
+          </div>
+          
+          <div className="flex-1 min-w-0">
+            <h1 className="text-3xl font-bold text-white truncate">{formData.name}</h1>
+            <p className="text-zinc-400 truncate">{formData.email}</p>
             <div className="flex flex-wrap items-center gap-3 mt-3">
               {profile && profile.is_approved ? (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-medium border border-emerald-500/20">
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-medium border border-emerald-500/20 shrink-0">
                   <CheckCircle2 className="h-3 w-3" /> Approved
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 text-xs font-medium border border-amber-500/20">
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 text-xs font-medium border border-amber-500/20 shrink-0">
                   <AlertCircle className="h-3 w-3" /> Pending Approval
                 </span>
               )}
               {profile?.class_roll && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 text-sm font-bold border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.15)]">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 text-sm font-bold border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.15)] shrink-0">
                   <GraduationCap className="h-3.5 w-3.5" />
                   Roll: {profile.class_roll}
                 </span>
@@ -385,7 +490,7 @@ export default function ProfilePage() {
                           setFormData({...formData, whatsapp: profile.whatsapp || ''});
                           setEditingField('whatsapp');
                         }}
-                        className="flex items-center gap-1.5 text-xs font-medium text-zinc-400 hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-2.5 py-1.5 rounded-lg"
+                        className="flex items-center gap-1.5 text-xs font-medium text-zinc-400 hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-2.5 py-1.5 rounded-lg shrink-0"
                         title="Edit WhatsApp"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
@@ -426,7 +531,7 @@ export default function ProfilePage() {
                           setFormData({...formData, facebook: profile.facebook || ''});
                           setEditingField('facebook');
                         }}
-                        className="flex items-center gap-1.5 text-xs font-medium text-zinc-400 hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-2.5 py-1.5 rounded-lg"
+                        className="flex items-center gap-1.5 text-xs font-medium text-zinc-400 hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-2.5 py-1.5 rounded-lg shrink-0"
                         title="Edit Facebook"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
@@ -474,7 +579,7 @@ export default function ProfilePage() {
                           setFormData({...formData, classRoll: profile.class_roll || ''});
                           setEditingField('class_roll');
                         }}
-                        className="flex items-center gap-1.5 text-xs font-medium text-zinc-400 hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-2.5 py-1.5 rounded-lg"
+                        className="flex items-center gap-1.5 text-xs font-medium text-zinc-400 hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-2.5 py-1.5 rounded-lg shrink-0"
                         title="Edit Class Roll"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
@@ -669,7 +774,6 @@ export default function ProfilePage() {
               onClick={() => {
                 setShowClassRollPopup(false);
                 setEditingField('class_roll');
-                // Scroll to academic identity section smoothly
                 window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
               }} 
               className="inline-flex items-center justify-center w-full rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white transition-transform hover:bg-blue-500"
