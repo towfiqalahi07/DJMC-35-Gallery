@@ -39,6 +39,14 @@ export default function AdminPage() {
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; type: 'profile' | 'image' | 'bulk' } | null>(null);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
 
+  // CR Management States
+  const [currentCrs, setCurrentCrs] = useState<any[]>([]);
+  const [crRollInput, setCrRollInput] = useState('');
+  const [fetchedCrStudent, setFetchedCrStudent] = useState<any>(null);
+  const [crSection, setCrSection] = useState('A');
+  const [crGender, setCrGender] = useState('Male');
+  const [isCrLoading, setIsCrLoading] = useState(false);
+
   const fetchGallery = async () => {
     try {
       const res = await fetch('/api/gallery');
@@ -49,6 +57,11 @@ export default function AdminPage() {
     } catch (err) {
       console.error('Failed to fetch gallery:', err);
     }
+  };
+
+  const fetchCurrentCrs = async () => {
+    const { data } = await supabase.from('students').select('*').not('cr_section', 'is', null);
+    if (data) setCurrentCrs(data);
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -71,6 +84,7 @@ export default function AdminPage() {
       setProfiles(data.profiles);
       setIsAuthenticated(true);
       fetchGallery();
+      fetchCurrentCrs(); // Fetch existing CRs on successful login
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -234,6 +248,69 @@ export default function AdminPage() {
       });
     } catch (err) {
       console.error('Failed to save reordered gallery:', err);
+    }
+  };
+
+  const handleFetchStudentForCr = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsCrLoading(true);
+    try {
+      const res = await fetch(`/api/admin/cr?roll=${crRollInput}`, {
+        headers: { 'x-admin-password': password }
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setFetchedCrStudent(data.student);
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.message });
+      setFetchedCrStudent(null);
+    } finally {
+      setIsCrLoading(false);
+    }
+  };
+
+  const handleConfirmCr = async () => {
+    setIsCrLoading(true);
+    try {
+      const res = await fetch('/api/admin/cr', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-password': password,
+        },
+        body: JSON.stringify({ studentId: fetchedCrStudent.id, section: crSection, gender: crGender }),
+      });
+      if (!res.ok) throw new Error('Failed to assign CR');
+      
+      setMessage({ type: 'success', text: 'CR assigned successfully!' });
+      setFetchedCrStudent(null);
+      setCrRollInput('');
+      fetchCurrentCrs();
+      setTimeout(() => setMessage(null), 3000);
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.message });
+    } finally {
+      setIsCrLoading(false);
+    }
+  };
+
+  const handleRemoveCr = async (id: string) => {
+    try {
+      const res = await fetch('/api/admin/cr', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-password': password,
+        },
+        body: JSON.stringify({ studentId: id }),
+      });
+      if (!res.ok) throw new Error('Failed to remove CR');
+      
+      fetchCurrentCrs();
+      setMessage({ type: 'success', text: 'CR removed' });
+      setTimeout(() => setMessage(null), 3000);
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.message });
     }
   };
 
@@ -457,7 +534,8 @@ export default function AdminPage() {
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img src={img.url} alt="Gallery image" className="object-cover w-full h-full" />
                               
-<div className="absolute inset-0 bg-black/40 md:bg-black/60 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">                                <div 
+                              <div className="absolute inset-0 bg-black/40 md:bg-black/60 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">                                
+                                <div 
                                   {...provided.dragHandleProps}
                                   className="h-10 w-10 rounded-full bg-white/20 text-white flex items-center justify-center hover:bg-white/40 transition-colors cursor-grab active:cursor-grabbing"
                                   title="Drag to reorder"
@@ -491,6 +569,104 @@ export default function AdminPage() {
                 </Droppable>
               </DragDropContext>
             )}
+          </div>
+        </div>
+
+        {/* CR Management Section */}
+        <div className="mt-12 space-y-6">
+          <h2 className="text-2xl font-bold text-white">Manage Class Representatives</h2>
+          
+          <div className="bg-zinc-900/50 border border-white/10 rounded-2xl p-6">
+            <form onSubmit={handleFetchStudentForCr} className="flex flex-col sm:flex-row gap-4 mb-6">
+              <input
+                type="text"
+                value={crRollInput}
+                onChange={(e) => setCrRollInput(e.target.value)}
+                placeholder="Enter Student Class Roll (e.g. 15)"
+                className="flex-1 rounded-xl border border-white/10 bg-black/50 px-4 py-3 text-white focus:border-white/20 focus:outline-none"
+                required
+              />
+              <button
+                type="submit"
+                disabled={isCrLoading}
+                className="rounded-xl bg-white px-6 py-3 font-semibold text-black transition-all hover:bg-zinc-200 disabled:opacity-50 whitespace-nowrap"
+              >
+                {isCrLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Fetch Student'}
+              </button>
+            </form>
+
+            {fetchedCrStudent && (
+              <div className="p-6 border border-blue-500/20 bg-blue-500/5 rounded-xl mb-8 space-y-4">
+                <div className="flex items-center gap-4">
+                  <div className="h-16 w-16 rounded-full overflow-hidden relative">
+                    <Image src={fetchedCrStudent.photo_url} alt={fetchedCrStudent.name} fill className="object-cover" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white">{fetchedCrStudent.name}</h3>
+                    <p className="text-zinc-400 text-sm">Roll: {fetchedCrStudent.class_roll} | Phone: {fetchedCrStudent.phone} | WA: {fetchedCrStudent.whatsapp || 'N/A'}</p>
+                  </div>
+                </div>
+                
+                <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t border-white/5 items-end">
+                  <div className="flex-1">
+                    <label className="text-xs text-zinc-400 mb-1 block">Assign to Section</label>
+                    <select value={crSection} onChange={(e) => setCrSection(e.target.value)} className="w-full rounded-xl border border-white/10 bg-black/50 px-4 py-3 text-white focus:border-white/20 focus:outline-none">
+                      <option value="A">Section A</option>
+                      <option value="B">Section B</option>
+                      <option value="C">Section C</option>
+                    </select>
+                  </div>
+                  <div className="flex-1">
+                    <label className="text-xs text-zinc-400 mb-1 block">CR Role</label>
+                    <select value={crGender} onChange={(e) => setCrGender(e.target.value)} className="w-full rounded-xl border border-white/10 bg-black/50 px-4 py-3 text-white focus:border-white/20 focus:outline-none">
+                      <option value="Male">Male CR</option>
+                      <option value="Female">Female CR</option>
+                    </select>
+                  </div>
+                  <button
+                    onClick={handleConfirmCr}
+                    disabled={isCrLoading}
+                    className="rounded-xl bg-blue-600 px-6 py-3 font-bold text-white transition-all hover:bg-blue-500 disabled:opacity-50 whitespace-nowrap w-full sm:w-auto"
+                  >
+                    Confirm & Set CR
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-white mb-4">Current CRs</h3>
+              {['A', 'B', 'C'].map(section => (
+                <div key={section} className="border border-white/5 bg-black/20 rounded-xl p-4">
+                  <h4 className="text-white font-bold mb-3 border-b border-white/5 pb-2">Section {section}</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {['Male', 'Female'].map(gender => {
+                      const cr = currentCrs.find(c => c.cr_section === section && c.cr_gender === gender);
+                      return (
+                        <div key={gender} className="flex items-center justify-between bg-zinc-900/50 p-3 rounded-lg border border-white/5">
+                          {cr ? (
+                            <>
+                              <div className="flex items-center gap-3">
+                                <Image src={cr.photo_url} alt={cr.name} width={40} height={40} className="rounded-full object-cover" />
+                                <div>
+                                  <p className="text-sm font-medium text-white">{cr.name}</p>
+                                  <p className={`text-xs ${gender === 'Male' ? 'text-blue-400' : 'text-pink-400'}`}>{gender} CR</p>
+                                </div>
+                              </div>
+                              <button onClick={() => handleRemoveCr(cr.id)} className="text-red-500 hover:text-red-400 p-2">
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </>
+                          ) : (
+                            <p className="text-zinc-500 text-sm py-2">No {gender} CR assigned</p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
