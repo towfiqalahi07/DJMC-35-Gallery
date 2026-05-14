@@ -37,8 +37,9 @@ export default function AboutPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true }, [Autoplay({ delay: 4000, stopOnInteraction: false })]);
 
-  // Stats state
+  // Stats & CR state
   const [profiles, setProfiles] = useState<ProfileProps[]>([]);
+  const [crs, setCrs] = useState<any[]>([]);
   const [isLoadingStats, setIsLoadingStats] = useState(true);
 
   const scrollPrev = useCallback(() => {
@@ -75,12 +76,12 @@ export default function AboutPage() {
     };
     fetchGallery();
 
-    // Fetch Stats
+    // Fetch Stats and CRs
     async function fetchProfiles() {
       try {
         const { data, error } = await supabase
           .from('students')
-          .select('id, district, blood_group, college')
+          .select('id, name, photo_url, phone, whatsapp, district, blood_group, college, cr_section, cr_gender')
           .eq('is_approved', true);
         
         if (error) throw error;
@@ -92,6 +93,10 @@ export default function AboutPage() {
             bloodGroup: d.blood_group,
             college: d.college
           })));
+
+          // Set CRs from the same data if they have cr_section set
+          const crData = data.filter(d => d.cr_section);
+          setCrs(crData);
         }
       } catch (error) {
         console.error('Error fetching profiles:', error);
@@ -155,7 +160,7 @@ export default function AboutPage() {
             <span className="text-black font-bold text-2xl">DjMC</span>
           </div>
           <h2 className="text-4xl md:text-6xl font-bold text-blue-400 font-bengali mt-2" suppressHydrationWarning>প্রত্যুষ্মান ৩৫</h2>
-          <p className="text-xl text-blue-400 font-bengali italic mb-8" suppressHydrationWarning>&quot;জ্ঞানে দীপ্ত, সেবায় মহান— মোরা পঁয়ত্রিশ, মোরাই প্রত্যুষ্মান&quot;</p>
+          <p className="text-xl text-blue-400 font-bengali italic mb-8" suppressHydrationWarning>"জ্ঞানে দীপ্ত, সেবায় মহান— মোরা পঁয়ত্রিশ, মোরাই প্রত্যুষ্মান"</p>
           <p className="max-w-2xl mx-auto text-zinc-400 text-lg">
             We are the 35th batch of Dinajpur Medical College. A family of future doctors, united by our passion for medicine and our bond as batchmates.
           </p>
@@ -258,23 +263,52 @@ export default function AboutPage() {
         {/* Class Representatives */}
         <section className="py-20 max-w-5xl mx-auto px-4">
           <h2 className="text-3xl font-bold text-white text-center mb-12">Class Representatives</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="flex items-center gap-6 p-6 rounded-3xl bg-zinc-900/50 border border-white/5">
-              <div className="h-24 w-24 rounded-full bg-zinc-800 border-4 border-zinc-900 shadow-xl shrink-0"></div>
-              <div>
-                <h3 className="text-xl font-bold text-white">CR Name (Male)</h3>
-                <p className="text-blue-400 text-sm font-medium mb-2">Class Representative</p>
-                <p className="text-zinc-400 text-sm">Contact info will be available here.</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-6 p-6 rounded-3xl bg-zinc-900/50 border border-white/5">
-              <div className="h-24 w-24 rounded-full bg-zinc-800 border-4 border-zinc-900 shadow-xl shrink-0"></div>
-              <div>
-                <h3 className="text-xl font-bold text-white">CR Name (Female)</h3>
-                <p className="text-pink-400 text-sm font-medium mb-2">Class Representative</p>
-                <p className="text-zinc-400 text-sm">Contact info will be available here.</p>
-              </div>
-            </div>
+          
+          <div className="space-y-12">
+            {['A', 'B', 'C'].map((section) => {
+              const sectionCrs = crs.filter(cr => cr.cr_section === section);
+              if (sectionCrs.length === 0) return null; // Hide section if no CRs are set yet
+
+              return (
+                <div key={section} className="relative">
+                  <div className="absolute inset-0 flex items-center justify-center -z-10 pointer-events-none">
+                    <span className="text-[12rem] font-black text-white/5">
+                      {section}
+                    </span>
+                  </div>
+                  <h3 className="text-2xl font-bold text-center text-white mb-8 border-b border-white/10 pb-4 relative z-10">Section {section}</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
+                    {['Male', 'Female'].map(gender => {
+                      const cr = sectionCrs.find(c => c.cr_gender === gender);
+                      if (!cr) return (
+                        <div key={gender} className="flex items-center gap-6 p-6 rounded-3xl bg-zinc-900/20 border border-white/5 border-dashed">
+                           <div className="text-zinc-500 text-sm italic m-auto">No {gender} CR assigned</div>
+                        </div>
+                      );
+
+                      return (
+                        <div key={gender} className="flex items-center gap-6 p-6 rounded-3xl bg-zinc-900/50 border border-white/5 backdrop-blur-md">
+                          <div className="h-24 w-24 rounded-full bg-zinc-800 border-4 border-zinc-900 shadow-xl shrink-0 overflow-hidden relative">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={cr.photo_url} alt={cr.name} className="object-cover w-full h-full" />
+                          </div>
+                          <div>
+                            <h3 className="text-xl font-bold text-white">{cr.name}</h3>
+                            <p className={`${gender === 'Male' ? 'text-blue-400' : 'text-pink-400'} text-sm font-medium mb-2`}>
+                              Class Representative ({gender})
+                            </p>
+                            <div className="text-zinc-400 text-sm space-y-1">
+                              <p className="flex items-center gap-2">📞 {cr.phone}</p>
+                              {cr.whatsapp && <p className="flex items-center gap-2">💬 WA: {cr.whatsapp}</p>}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </section>
 
