@@ -10,7 +10,7 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false); // <--- Added State for photo upload
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [editingField, setEditingField] = useState<'whatsapp' | 'facebook' | 'class_roll' | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [isPhoneVerified, setIsPhoneVerified] = useState(false);
@@ -22,7 +22,7 @@ export default function ProfilePage() {
   const [expectedOtp, setExpectedOtp] = useState('');
   const router = useRouter();
   
-  const fileInputRef = useRef<HTMLInputElement>(null); // <--- Reference for the hidden file input
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -89,15 +89,13 @@ export default function ProfilePage() {
     fetchUser();
   }, [router]);
 
-  // --- Start Photo Upload Logic ---
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Check file size (1MB limit)
     if (file.size > 1024 * 1024) {
       setMessage({ type: 'error', text: 'Photo must be less than 1MB.' });
-      if (fileInputRef.current) fileInputRef.current.value = ''; // Reset input
+      if (fileInputRef.current) fileInputRef.current.value = ''; 
       return;
     }
 
@@ -107,7 +105,6 @@ export default function ProfilePage() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       
-      // 1. Get presigned URL from existing API
       const res = await fetch('/api/upload', {
         method: 'POST',
         headers: {
@@ -117,10 +114,13 @@ export default function ProfilePage() {
         body: JSON.stringify({ filename: file.name, contentType: file.type })
       });
 
-      if (!res.ok) throw new Error('Failed to get upload URL');
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || `Server error: ${res.status}`);
+      }
+      
       const { signedUrl, publicUrl } = await res.json();
 
-      // 2. Upload directly to Cloudflare R2 bucket
       const uploadRes = await fetch(signedUrl, {
         method: 'PUT',
         headers: {
@@ -129,9 +129,8 @@ export default function ProfilePage() {
         body: file
       });
 
-      if (!uploadRes.ok) throw new Error('Failed to upload photo to storage');
+      if (!uploadRes.ok) throw new Error('Failed to upload photo to Cloudflare R2');
 
-      // 3. Update the database profile with the new public photo URL
       const payload = {
         name: profile?.name || formData.name,
         email: profile?.email || formData.email,
@@ -156,19 +155,19 @@ export default function ProfilePage() {
         body: JSON.stringify(payload)
       });
 
-      if (!updateRes.ok) throw new Error('Failed to update profile record');
+      if (!updateRes.ok) throw new Error('Failed to save the new photo URL to your profile');
 
       setProfile((prev: any) => ({ ...prev, photo_url: publicUrl }));
       setMessage({ type: 'success', text: 'Profile photo updated successfully!' });
 
     } catch (error: any) {
       setMessage({ type: 'error', text: error.message || 'Failed to update photo.' });
+      console.error(error);
     } finally {
       setIsUploadingPhoto(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
-  // --- End Photo Upload Logic ---
 
   const handlePhoneCheck = async () => {
     if (!formData.phone) return;
@@ -367,7 +366,6 @@ export default function ProfilePage() {
     <>
       <main className="flex-1 max-w-3xl mx-auto w-full px-4 py-12 relative">
         <div className="mb-8 flex items-center gap-6">
-          {/* Profile Photo with Upload Overlay */}
           <div className="relative inline-block group shrink-0">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img 
@@ -594,7 +592,7 @@ export default function ProfilePage() {
         ) : !isPhoneVerified ? (
           <div className="space-y-6 bg-zinc-900/50 p-6 sm:p-8 rounded-3xl border border-white/5 max-w-md mx-auto">
             <h2 className="text-xl font-bold text-white mb-4">Verify Your Phone Number</h2>
-            <p className="text-zinc-400 text-sm mb-6">Please enter your phone number. If it&apos;s in our database, we&apos;ll autofill your profile. Otherwise, we&apos;ll send an OTP to verify.</p>
+            <p className="text-zinc-400 text-sm mb-6">Please enter your phone number. If it's in our database, we'll autofill your profile. Otherwise, we'll send an OTP to verify.</p>
             
             {!showOtpInput ? (
               <div className="space-y-4">
